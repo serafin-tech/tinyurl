@@ -4,10 +4,10 @@ import os
 from collections.abc import Iterator
 
 import pytest
+from sqlalchemy.orm import Session
 
 from src.adapters.db.models import Base
 from src.adapters.db.session import SessionLocal, engine
-
 
 # Ensure SQLite points to a writable path for tests before session usage
 _TEST_DB_DIR = os.path.join(os.path.dirname(__file__), ".tmp")
@@ -22,7 +22,7 @@ def init_db() -> None:
 
 
 @pytest.fixture
-def db_session() -> Iterator[SessionLocal]:
+def db_session() -> Iterator[Session]:
     """Provide a clean database session for each test with automatic cleanup."""
     session = SessionLocal()
     try:
