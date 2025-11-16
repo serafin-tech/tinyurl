@@ -31,12 +31,12 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
    - The `target_url`
    - The `redirect_code`
    - Or the `link-id` (alias change)
-2. Updates require a valid edit token.
+2. Updates require prividing valid `edit_token`.
 3. If changing the `link-id`, the new ID must be unused. By default, the old ID stops working and will return 410 Gone (see Deletion).
 
 ### Deleting an existing link
 
-1. The user can request deletion of a previously created link using the edit token.
+1. The user can request deletion of a previously created link using valid `edit_token`.
 2. The system marks the entry as deleted (`active=false`, `target_url` may be nulled). Redirect service must return 410 Gone for that `link-id`.
 
 ### Redirection
