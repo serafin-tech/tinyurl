@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.sqlite
+*.db
 *.egg-info/
 **/*.egg-info/
 
@@ -27,5 +28,5 @@ htmlcov/
 # SQLite data volume (if mapped locally)
 backend/data/
 
-# Test temporary files
+# Test artifacts
 backend/tests/.tmp/
