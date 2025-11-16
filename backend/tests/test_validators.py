@@ -7,6 +7,7 @@ from src.domain.validators import (
     validate_link_id,
     validate_redirect_code,
 )
+from src.domain.constants import MAX_URL_LENGTH
 
 
 def test_normalize_and_validate_link_id_ok():
@@ -29,6 +30,21 @@ def test_validate_link_id_reserved():
         validate_link_id("api")
 
 
+def test_validate_link_id_length_bounds():
+    """Link-id length: 1..32 allowed; 33 should fail."""
+    validate_link_id("a")
+    validate_link_id("a" * 32)
+    with pytest.raises(ValidationError):
+        validate_link_id("a" * 33)
+
+
+def test_reserved_after_normalization():
+    """Uppercase reserved IDs become reserved after normalization."""
+    reserved = normalize_link_id("API")
+    with pytest.raises(ValidationError):
+        validate_link_id(reserved)
+
+
 def test_normalize_url_ok_and_punycode():
     """URLs normalize and apply punycode to internationalized domains."""
     url = "https://exämple.com/path?q=1"
@@ -41,6 +57,19 @@ def test_normalize_url_invalid_scheme():
     """Schemes other than http/https are rejected."""
     with pytest.raises(ValidationError):
         normalize_url("ftp://example.com")
+
+
+def test_normalize_url_uppercase_scheme_ok():
+    """Uppercase scheme should normalize and be accepted."""
+    out = normalize_url("HTTP://EXAMPLE.com")
+    assert out.startswith("http://")
+
+
+def test_normalize_url_too_long():
+    """Reject URLs exceeding MAX_URL_LENGTH prior to normalization."""
+    long_path = "a" * (MAX_URL_LENGTH + 1 - len("https://example.com/"))
+    with pytest.raises(ValidationError):
+        normalize_url(f"https://example.com/{long_path}")
 
 
 def test_validate_redirect_code():

@@ -24,3 +24,7 @@ class GoneError(DomainError):
 
 class UnauthorizedError(DomainError):
     """Missing or invalid edit token."""
+
+
+class GenerationError(DomainError):
+    """Failure to generate a unique link id within retry budget."""
