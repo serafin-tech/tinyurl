@@ -72,6 +72,18 @@ def hash_token(token: str, pepper: str | None = None) -> str:
 
 
 def verify_token(token: str, token_hash: str, pepper: str | None = None) -> bool:
-    """Constant-time compare of provided token vs stored hash."""
+    """Verify that a token matches a stored hash using constant-time comparison.
+
+    Args:
+        token (str): The plaintext token to verify.
+        token_hash (str): The expected hex-encoded SHA-256 hash to compare against.
+        pepper (str | None): Optional secret value to prepend to the token before hashing.
+
+    Returns:
+        bool: True if the token matches the hash, False otherwise.
+
+    Security:
+        Uses constant-time comparison to prevent timing attacks.
+    """
     expected = _compute_hash(token, pepper)
     return secrets.compare_digest(expected, token_hash)
