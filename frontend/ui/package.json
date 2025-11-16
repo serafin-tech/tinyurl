@@ -1,0 +1,20 @@
+{
+  "name": "tinyurl-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5174"
+  },
+  "dependencies": {
+    "svelte": "^4.2.18"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "typescript": "^5.5.4",
+    "vite": "^5.2.10",
+    "svelte-check": "^4.0.0"
+  }
+}
