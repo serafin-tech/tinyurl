@@ -1,6 +1,8 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import UTC, datetime
 
@@ -10,6 +12,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.adapters.db.repository import LinkRepository
+from src.adapters.db.session import init_db
 from src.api.deps import (
     get_base_url,
     get_db,
@@ -52,15 +55,28 @@ openapi_tags = [
     },
 ]
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - trivial startup hook
+    """Ensure database tables exist at startup (MVP: no migrations)."""
+    # Startup
+    init_db()
+    yield
+    # Shutdown (if needed)
+
+
 app = FastAPI(
     title="TinyURL Backend MVP",
     version="0.1.0",
     description=(
-        "A minimal URL shortener API. Create short links, update or delete them with an edit token, "
-        "and serve high-performance redirects with correct cache semantics."
+        "A minimal URL shortener API. Create short links, update or delete them "
+        "with an edit token, and serve high-performance redirects with correct "
+        "cache semantics."
     ),
     openapi_tags=openapi_tags,
+    lifespan=lifespan,
 )
+
 
 # Enable CORS for local UI development (configure origins via ALLOW_ORIGINS, comma-separated)
 _origins = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
@@ -265,7 +281,8 @@ async def update_link(
     tags=["Links"],
     summary="Delete (soft) a link",
     description=(
-        "Soft-delete a link by marking it inactive (returns 410 on redirect). Requires a valid edit token."
+        "Soft-delete a link by marking it inactive (returns 410 on redirect). "
+        "Requires a valid edit token."
     ),
 )
 async def delete_link(

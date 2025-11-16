@@ -1,0 +1,43 @@
+---
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: tinyurl-backend
+    # WARNING: Set a strong TOKEN_PEPPER value in your environment for production!
+    # Do NOT commit secrets to version control. See docs/REQUIREMENTS.md for details.
+    environment:
+      BASE_URL: http://localhost:8000
+      SQLITE_DB_PATH: /data/links.db
+      TOKEN_PEPPER: ${TOKEN_PEPPER:-devpepper}
+      ALLOW_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    volumes:
+      - tinyurl-data:/data
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: tinyurl-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - 5173:80
+    restart: unless-stopped
+
+volumes:
+  tinyurl-data:
