@@ -29,10 +29,10 @@ def generate_unique_link_id(exists: Callable[[str], bool], max_attempts: int = 5
         max_attempts: Maximum attempts before raising GenerationError.
 
     Returns:
-        A unique 6-character lowercase hexadecimal string.
+        str: A unique 6-character lowercase hexadecimal string.
 
     Raises:
-        GenerationError: If a unique id cannot be generated within max_attempts.
+        GenerationError: When a unique id cannot be generated within max_attempts.
     """
     for _ in range(max_attempts):
         candidate = _random_hex_id()
@@ -45,7 +45,14 @@ _ALPHANUM = string.ascii_letters + string.digits
 
 
 def generate_edit_token(length: int = 24) -> str:
-    """Generate a high-entropy token consisting of [A-Za-z0-9]."""
+    """Generate a high-entropy token consisting of [A-Za-z0-9].
+
+    Args:
+        length: The length of the token to generate. Defaults to 24.
+
+    Returns:
+        str: A random string of the specified length, using only uppercase and lowercase ASCII letters and digits (A-Za-z0-9).
+    """
     return "".join(secrets.choice(_ALPHANUM) for _ in range(length))
 
 
@@ -58,11 +65,31 @@ def _compute_hash(token: str, pepper: str | None) -> str:
 
 
 def hash_token(token: str, pepper: str | None = None) -> str:
-    """Return a hex sha256 hash of token (optionally prepended with pepper)."""
+    """Compute a SHA-256 hash of the token (optionally prepended with pepper).
+
+    Args:
+        token (str): The token to hash.
+        pepper (str | None, optional): An optional secret value to prepend to the token before hashing.
+
+    Returns:
+        str: A 64-character lowercase hexadecimal string representing the SHA-256 hash.
+    """
     return _compute_hash(token, pepper)
 
 
 def verify_token(token: str, token_hash: str, pepper: str | None = None) -> bool:
-    """Constant-time compare of provided token vs stored hash."""
+    """Verify that a token matches a stored hash using constant-time comparison.
+
+    Args:
+        token (str): The plaintext token to verify.
+        token_hash (str): The expected hex-encoded SHA-256 hash to compare against.
+        pepper (str | None): Optional secret value to prepend to the token before hashing.
+
+    Returns:
+        bool: True if the token matches the hash, False otherwise.
+
+    Security:
+        Uses constant-time comparison to prevent timing attacks.
+    """
     expected = _compute_hash(token, pepper)
     return secrets.compare_digest(expected, token_hash)

@@ -29,7 +29,7 @@ def test_generate_unique_link_id_with_collision_then_success(
     """First candidate collides, second is unique."""
     seq = itertools.cycle(["deadbe", "b16b00"])
 
-    def fake_token_hex(n: int) -> str:  # noqa: ARG001 - test helper signature
+    def fake_token_hex(n: int) -> str:
         return next(seq)[: 2 * n]
 
     monkeypatch.setattr(mod.secrets, "token_hex", fake_token_hex)
