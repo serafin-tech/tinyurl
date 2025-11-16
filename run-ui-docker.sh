@@ -27,14 +27,27 @@ PORT_DEV="${PORT_DEV:-5173}"
 PORT_PREVIEW="${PORT_PREVIEW:-5174}"
 VITE_API_BASE="${VITE_API_BASE:-http://localhost:8000}"
 VOLUME_NAME="tinyurl_ui_node_modules"
+HOST_UID="${HOST_UID:-$(id -u)}"
+HOST_GID="${HOST_GID:-$(id -g)}"
 
 echo "[info] Pulling Docker image: $DOCKER_IMAGE"
 docker pull "$DOCKER_IMAGE" >/dev/null
 
+# Ensure the node_modules volume exists and is owned by host uid:gid to avoid EACCES
+ensure_node_modules_volume() {
+  echo "[info] Ensuring ownership of volume $VOLUME_NAME for $HOST_UID:$HOST_GID"
+  # Create the volume if missing, then chown it as root inside a short-lived container
+  docker volume inspect "$VOLUME_NAME" >/dev/null 2>&1 || docker volume create "$VOLUME_NAME" >/dev/null
+  docker run --rm \
+    -v "$VOLUME_NAME:/app/node_modules" \
+    "$DOCKER_IMAGE" \
+    sh -lc "mkdir -p /app/node_modules && chown -R $HOST_UID:$HOST_GID /app/node_modules"
+}
+
 # Base docker run args
 DOCKER_RUN=(
   docker run --rm -it
-  -u "$(id -u):$(id -g)"
+  -u "$HOST_UID:$HOST_GID"
   -v "$UI_DIR:/app"
   -v "$VOLUME_NAME:/app/node_modules"
   -w /app
@@ -44,18 +57,21 @@ DOCKER_RUN=(
 case "$CMD" in
   dev)
     echo "[info] Starting Vite dev server on port $PORT_DEV (API: $VITE_API_BASE)"
+    ensure_node_modules_volume
     "${DOCKER_RUN[@]}" -p "$PORT_DEV:$PORT_DEV" "$DOCKER_IMAGE" \
       sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port $PORT_DEV"
     ;;
 
   preview)
     echo "[info] Building UI and serving preview on port $PORT_PREVIEW (API: $VITE_API_BASE)"
+    ensure_node_modules_volume
     "${DOCKER_RUN[@]}" -p "$PORT_PREVIEW:$PORT_PREVIEW" "$DOCKER_IMAGE" \
       sh -lc "npm install && npm run build && npm run preview -- --host 0.0.0.0 --port $PORT_PREVIEW"
     ;;
 
   build)
     echo "[info] Building production UI (API: $VITE_API_BASE)"
+    ensure_node_modules_volume
     "${DOCKER_RUN[@]}" "$DOCKER_IMAGE" \
       sh -lc "npm install && npm run build"
     ;;
