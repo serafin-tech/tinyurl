@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.sqlite
+*.db
 *.egg-info/
 **/*.egg-info/
 
