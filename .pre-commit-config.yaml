@@ -15,3 +15,16 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: []
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        name: check YAML syntax
+        files: ".*\\.ya?ml$"
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint
+        files: ".*\\.ya?ml$"
+        entry: yamllint -c .yamllint
