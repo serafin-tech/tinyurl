@@ -27,6 +27,12 @@ def generate_unique_link_id(exists: Callable[[str], bool], max_attempts: int = 5
     Args:
         exists: A callable that returns True if the given id already exists.
         max_attempts: Maximum attempts before raising GenerationError.
+
+    Returns:
+        str: A unique 6-character lowercase hexadecimal string.
+
+    Raises:
+        GenerationError: When a unique id cannot be generated within max_attempts.
     """
     for _ in range(max_attempts):
         candidate = _random_hex_id()
