@@ -1,4 +1,4 @@
-version: "3.9"
+---
 services:
   backend:
     build:
@@ -13,7 +13,7 @@ services:
     volumes:
       - tinyurl-data:/data
     ports:
-      - "8000:8000"
+      - 8000:8000
     restart: unless-stopped
 
   frontend:
@@ -24,7 +24,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - 5173:80
     restart: unless-stopped
 
 volumes:
