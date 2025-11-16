@@ -88,6 +88,19 @@ See application description in [docs/REQUIREMENTS.md](../docs/REQUIREMENTS.md).
 
 ### Guidelines for PYTHON
 
+#### PYTHON_CODING_STANDARDS
+
+- Follow PEP 8 style guide for Python code formatting and conventions
+- Use type hints for all function signatures and class attributes for better code clarity and static analysis
+- Implement docstrings for all public modules, classes, and functions using Google style
+- Use f-strings for string formatting for better readability and performance
+- Leverage list comprehensions and generator expressions for concise and efficient data processing
+- Use context managers (with statement) for resource management (files, database connections, etc.)
+- Implement logging using the built-in logging module instead of print statements for better control over log output
+- ensure no `__future__` imports are used in code
+- Follow naming conventions: snake_case for functions and variables, PascalCase for classes
+- Ensure import order follows standard library, third-party, and local imports separated by a blank line
+
 #### FASTAPI
 
 - Use Pydantic models for request and response validation with strict type checking and custom validators

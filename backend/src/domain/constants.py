@@ -20,5 +20,8 @@ RESERVED_LINK_IDS: Final[set[str]] = {
 # Permitted redirect codes
 ALLOWED_REDIRECT_CODES: Final[set[int]] = {301, 302, 307, 308}
 
+# Specific well-known HTTP status codes used in the domain
+HTTP_308_PERMANENT_REDIRECT: Final[int] = 308
+
 # URL constraints
 MAX_URL_LENGTH: Final[int] = 2048
