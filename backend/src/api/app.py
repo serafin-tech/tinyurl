@@ -1,9 +1,9 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
+import os
 from dataclasses import asdict
 from datetime import UTC, datetime
 
-import os
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -68,8 +68,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _origins if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Edit-Token"],
 )
 
 
