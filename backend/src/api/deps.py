@@ -35,6 +35,16 @@ def get_token_pepper() -> str | None:
     return os.getenv("EDIT_TOKEN_PEPPER")
 
 
+def get_permanent_cache_seconds() -> int:
+    """Cache max-age (seconds) for permanent redirects (301/308). Default 86400 (1 day)."""
+    val = os.getenv("PERMANENT_CACHE_SECONDS", "86400")
+    try:
+        secs = int(val)
+        return max(secs, 0)
+    except ValueError:
+        return 86400
+
+
 def get_edit_token(x_edit_token: str | None = Header(default=None)) -> str:
     """Extract edit token from X-Edit-Token header; 401 if missing."""
     if not x_edit_token:
