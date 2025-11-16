@@ -108,7 +108,7 @@ async def update_link(
     try:
         current = repo.get(link_id)
     except NotFoundError as exc:
-        raise HTTPException(status_code=404, detail="not found") from exc
+        raise HTTPException(status_code=404, detail="Link not found") from exc
 
     if not verify_token(edit_token, current.edit_token_hash, pepper=pepper):
         raise HTTPException(status_code=403, detail="invalid edit token")
@@ -128,8 +128,7 @@ async def update_link(
         try:
             updated = repo.change_id(link_id, new_alias)
         except NotFoundError as exc:
-            raise HTTPException(status_code=404, detail="not found") from exc
-        current = updated
+            raise HTTPException(status_code=404, detail="Link not found") from exc
         link_id = updated.link_id
 
     # Partial update
@@ -140,7 +139,7 @@ async def update_link(
             redirect_code=new_code,
         )
     except NotFoundError as exc:
-        raise HTTPException(status_code=404, detail="not found") from exc
+        raise HTTPException(status_code=404, detail="Link not found") from exc
 
     return LinkOut(**asdict(updated))
 
@@ -158,7 +157,7 @@ async def delete_link(
     try:
         current = repo.get(link_id)
     except NotFoundError as exc:
-        raise HTTPException(status_code=404, detail="not found") from exc
+        raise HTTPException(status_code=404, detail="Link not found") from exc
 
     if not verify_token(edit_token, current.edit_token_hash, pepper=pepper):
         raise HTTPException(status_code=403, detail="invalid edit token")
@@ -167,6 +166,6 @@ async def delete_link(
     try:
         link = repo.update(link_id, active=False)
     except NotFoundError as exc:  # should not happen if get succeeded
-        raise HTTPException(status_code=404, detail="not found") from exc
+        raise HTTPException(status_code=404, detail="Link not found") from exc
     return {"status": "deleted", "link_id": link.link_id}
 
