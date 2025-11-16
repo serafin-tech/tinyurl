@@ -11,7 +11,7 @@ Contracts:
 import hashlib
 import secrets
 import string
-from typing import Callable
+from collections.abc import Callable
 
 from .errors import GenerationError
 
@@ -51,7 +51,7 @@ def generate_edit_token(length: int = 24) -> str:
         length: The length of the token to generate. Defaults to 24.
 
     Returns:
-        str: A random string of the specified length, using only uppercase and lowercase ASCII letters and digits (A-Za-z0-9).
+        str: Random string using only ASCII letters and digits (A-Za-z0-9).
     """
     return "".join(secrets.choice(_ALPHANUM) for _ in range(length))
 
@@ -69,7 +69,7 @@ def hash_token(token: str, pepper: str | None = None) -> str:
 
     Args:
         token (str): The token to hash.
-        pepper (str | None, optional): An optional secret value to prepend to the token before hashing.
+        pepper (str | None, optional): Optional secret value to prepend before hashing.
 
     Returns:
         str: A 64-character lowercase hexadecimal string representing the SHA-256 hash.
