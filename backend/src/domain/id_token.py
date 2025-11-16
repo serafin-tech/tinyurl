@@ -59,7 +59,15 @@ def _compute_hash(token: str, pepper: str | None) -> str:
 
 
 def hash_token(token: str, pepper: str | None = None) -> str:
-    """Return a hex sha256 hash of token (optionally prepended with pepper)."""
+    """Compute a SHA-256 hash of the token (optionally prepended with pepper).
+
+    Args:
+        token (str): The token to hash.
+        pepper (str | None, optional): An optional secret value to prepend to the token before hashing.
+
+    Returns:
+        str: A 64-character lowercase hexadecimal string representing the SHA-256 hash.
+    """
     return _compute_hash(token, pepper)
 
 
