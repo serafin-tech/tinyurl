@@ -1,9 +1,11 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
+import os
 from dataclasses import asdict
 from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -35,16 +37,58 @@ from src.domain.validators import (
     validate_redirect_code,
 )
 
-app = FastAPI(title="TinyURL Backend MVP", version="0.1.0")
+openapi_tags = [
+    {
+        "name": "Health",
+        "description": "Service health probes and diagnostics.",
+    },
+    {
+        "name": "Redirect",
+        "description": "Public redirect endpoint that resolves short IDs to target URLs.",
+    },
+    {
+        "name": "Links",
+        "description": "Create, update, delete, and manage short links.",
+    },
+]
+
+app = FastAPI(
+    title="TinyURL Backend MVP",
+    version="0.1.0",
+    description=(
+        "A minimal URL shortener API. Create short links, update or delete them with an edit token, "
+        "and serve high-performance redirects with correct cache semantics."
+    ),
+    openapi_tags=openapi_tags,
+)
+
+# Enable CORS for local UI development (configure origins via ALLOW_ORIGINS, comma-separated)
+_origins = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _origins if o.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Edit-Token"],
+)
 
 
-@app.get("/api/health")
+@app.get("/api/health", tags=["Health"], summary="Health check")
 async def health() -> dict[str, str]:
     """Simple health check endpoint."""
     return {"status": "ok"}
 
 
-@app.api_route("/{link_id}", methods=["GET", "HEAD"])
+@app.api_route(
+    "/{link_id}",
+    methods=["GET", "HEAD"],
+    tags=["Redirect"],
+    summary="Redirect by short ID",
+    description=(
+        "Resolves a short link ID to its target URL and returns a redirect. "
+        "Inactive (deleted) or expired links return 410; missing IDs return 404."
+    ),
+)
 async def redirect_link(
     link_id: str,
     db: Session = Depends(get_db),
@@ -89,7 +133,16 @@ async def handle_validation_error(
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-@app.post("/api/links", response_model=CreateLinkResponse)
+@app.post(
+    "/api/links",
+    response_model=CreateLinkResponse,
+    tags=["Links"],
+    summary="Create a short link",
+    description=(
+        "Create a new short link with an auto-generated 6-char hex ID or a provided custom ID. "
+        "Returns the short URL and an edit token required for future updates/deletion."
+    ),
+)
 async def create_link(
     payload: CreateLinkRequest,
     db: Session = Depends(get_db),
@@ -140,7 +193,16 @@ async def create_link(
     )
 
 
-@app.patch("/api/links/{link_id}", response_model=LinkOut)
+@app.patch(
+    "/api/links/{link_id}",
+    response_model=LinkOut,
+    tags=["Links"],
+    summary="Update link or change alias",
+    description=(
+        "Update target_url and/or redirect_code. Optionally change the alias (link ID). "
+        "Requires a valid edit token. Old alias is tombstoned (returns 410)."
+    ),
+)
 async def update_link(
     link_id: str,
     payload: UpdateLinkRequest,
@@ -198,7 +260,14 @@ async def update_link(
     return LinkOut(**asdict(updated))
 
 
-@app.delete("/api/links/{link_id}")
+@app.delete(
+    "/api/links/{link_id}",
+    tags=["Links"],
+    summary="Delete (soft) a link",
+    description=(
+        "Soft-delete a link by marking it inactive (returns 410 on redirect). Requires a valid edit token."
+    ),
+)
 async def delete_link(
     link_id: str,
     db: Session = Depends(get_db),
