@@ -37,6 +37,7 @@ from src.domain.validators import (
 
 app = FastAPI(title="TinyURL Backend MVP", version="0.1.0")
 
+
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     """Simple health check endpoint."""
@@ -107,7 +108,8 @@ async def create_link(
         link_id = normalize_link_id(payload.link_id)
         validate_link_id(link_id)
         if repo.exists(link_id):
-            raise HTTPException(status_code=409, detail="link_id already taken")
+            raise HTTPException(
+                status_code=409, detail="link_id already taken")
     else:
         # Generate a unique id using the repository exists() check
         link_id = generate_unique_link_id(repo.exists)
@@ -125,7 +127,8 @@ async def create_link(
         )
     except ConflictError as exc:
         # Rare race when id was taken between exists() and create()
-        raise HTTPException(status_code=409, detail="link_id already taken") from exc
+        raise HTTPException(
+            status_code=409, detail="link_id already taken") from exc
 
     short_url = f"{base_url.rstrip('/')}/{link.link_id}"
     return CreateLinkResponse(
@@ -145,7 +148,11 @@ async def update_link(
     pepper: str | None = Depends(get_token_pepper),
     edit_token: str = Depends(get_edit_token),
 ) -> LinkOut:
-    """Update target_url/redirect_code or change alias; requires edit token."""
+    """Update target_url/redirect_code or optionally change alias; requires edit token.
+
+    Alias change semantics (tombstoning): old alias becomes inactive (returns 410)
+    and new alias serves redirects. Token remains the same for MVP (could rotate later).
+    """
     repo = LinkRepository(db)
 
     # fetch link to access stored hash
@@ -158,7 +165,8 @@ async def update_link(
         raise HTTPException(status_code=403, detail="invalid edit token")
 
     # Apply validations
-    new_target = normalize_url(payload.target_url) if payload.target_url else None
+    new_target = normalize_url(
+        payload.target_url) if payload.target_url else None
     new_code = payload.redirect_code
     if new_code is not None:
         validate_redirect_code(new_code)
@@ -168,11 +176,13 @@ async def update_link(
         new_alias = normalize_link_id(payload.new_link_id)
         validate_link_id(new_alias)
         if repo.exists(new_alias):
-            raise HTTPException(status_code=409, detail="new_link_id already taken")
+            raise HTTPException(
+                status_code=409, detail="new_link_id already taken")
         try:
             updated = repo.change_id(link_id, new_alias)
         except NotFoundError as exc:
-            raise HTTPException(status_code=404, detail="Link not found") from exc
+            raise HTTPException(
+                status_code=404, detail="Link not found") from exc
         link_id = updated.link_id
 
     # Partial update
@@ -212,4 +222,3 @@ async def delete_link(
     except NotFoundError as exc:  # should not happen if get succeeded
         raise HTTPException(status_code=404, detail="Link not found") from exc
     return {"status": "deleted", "link_id": link.link_id}
-
