@@ -1,5 +1,6 @@
 import pytest
 
+from src.domain.constants import MAX_URL_LENGTH
 from src.domain.errors import ValidationError
 from src.domain.validators import (
     normalize_link_id,
@@ -7,7 +8,6 @@ from src.domain.validators import (
     validate_link_id,
     validate_redirect_code,
 )
-from src.domain.constants import MAX_URL_LENGTH
 
 
 def test_normalize_and_validate_link_id_ok():
