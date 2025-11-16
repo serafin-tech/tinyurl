@@ -39,7 +39,14 @@ _ALPHANUM = string.ascii_letters + string.digits
 
 
 def generate_edit_token(length: int = 24) -> str:
-    """Generate a high-entropy token consisting of [A-Za-z0-9]."""
+    """Generate a high-entropy token consisting of [A-Za-z0-9].
+
+    Args:
+        length: The length of the token to generate. Defaults to 24.
+
+    Returns:
+        str: A random string of the specified length, using only uppercase and lowercase ASCII letters and digits (A-Za-z0-9).
+    """
     return "".join(secrets.choice(_ALPHANUM) for _ in range(length))
 
 
