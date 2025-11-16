@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  backend:
+    build: .
+    container_name: tinyurl-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SQLITE_DB_PATH=/data/links.db
+      - BASE_URL=http://localhost:8000
+      - TOKEN_PEPPER=devpepper
+      - RATE_LIMIT_CREATE=100
+      - RATE_LIMIT_UPDATE=100
+      - RATE_LIMIT_DELETE=100
+    volumes:
+      - tinyurl-data:/data
+    restart: unless-stopped
+volumes:
+  tinyurl-data:

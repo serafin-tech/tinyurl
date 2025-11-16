@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite
+*.egg-info/
+**/*.egg-info/
+
+# Env
+.env
+backend/.venv/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# VSCode
+.vscode/
+
+# Docker artifacts
+*.log
+
+# SQLite data volume (if mapped locally)
+backend/data/
