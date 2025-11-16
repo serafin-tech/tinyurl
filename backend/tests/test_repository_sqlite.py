@@ -36,7 +36,10 @@ def test_create_get_update_change_id(db_session) -> None:
     # Change ID
     changed = repo.change_id("abc123", "def456")
     assert changed.link_id == "def456"
-    assert not repo.exists("abc123")
+    # Old id still exists (tombstoned/inactive)
+    assert repo.exists("abc123")
+    old = repo.get("abc123")
+    assert not old.active
     assert repo.exists("def456")
 
 

@@ -102,31 +102,37 @@ class LinkRepository:
     def change_id(self, old_id: str, new_id: str) -> Link:
         """Change the primary key by cloning row to new_id and deleting old.
 
-        This approach avoids PK updates that may be constrained; suitable for SQLite MVP.
+        Tombstoning semantics: we retain the old row but mark it inactive so
+        redirects to the old alias return 410 Gone instead of 404 after an
+        alias change. We clone data to a new row with the new_id, preserving
+        original created_at timestamp and updating updated_at. Old row is
+        soft-deactivated.
         """
-        model = self.session.get(LinkModel, old_id)
-        if not model:
+        old_model = self.session.get(LinkModel, old_id)
+        if not old_model:
             raise NotFoundError("link not found")
-        # Ensure new_id isn't taken
         if self.session.get(LinkModel, new_id) is not None:
             raise ConflictError("new_link_id already exists")
-        # Create a new row with new_id and delete old row
-        # (SQLite has no UPDATE PK constraint-friendly op)
-        cloned = LinkModel(
+
+        # Mark old model inactive (tombstone)
+        old_model.active = False
+        old_model.updated_at = datetime.now(UTC)
+
+        # Clone into new active model
+        new_model = LinkModel(
             link_id=new_id,
-            target_url=model.target_url,
-            redirect_code=model.redirect_code,
-            created_at=model.created_at,
+            target_url=old_model.target_url,
+            redirect_code=old_model.redirect_code,
+            created_at=old_model.created_at,
             updated_at=datetime.now(UTC),
-            edit_token_hash=model.edit_token_hash,
-            active=model.active,
-            expires_at=model.expires_at,
+            edit_token_hash=old_model.edit_token_hash,
+            active=True,
+            expires_at=old_model.expires_at,
         )
-        self.session.add(cloned)
-        self.session.delete(model)
+        self.session.add(new_model)
         try:
             self.session.flush()
         except IntegrityError as exc:
             self.session.rollback()
             raise ConflictError("new_link_id already exists") from exc
-        return _to_entity(cloned)
+        return _to_entity(new_model)
