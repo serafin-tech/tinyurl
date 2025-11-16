@@ -38,5 +38,5 @@ def get_token_pepper() -> str | None:
 def get_edit_token(x_edit_token: str | None = Header(default=None)) -> str:
     """Extract edit token from X-Edit-Token header; 401 if missing."""
     if not x_edit_token:
-        raise HTTPException(status_code=401, detail="missing edit token")
+        raise HTTPException(status_code=401, detail="Missing or invalid X-Edit-Token header")
     return x_edit_token
