@@ -12,6 +12,10 @@ __pycache__/
 .env
 backend/.venv/
 
+# Node
+node_modules/
+dist/
+
 # Tool caches
 .mypy_cache/
 .ruff_cache/

@@ -3,6 +3,6 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 export default {
   preprocess: vitePreprocess(),
   compilerOptions: {
-    dev: true
+    dev: process.env.NODE_ENV !== 'production'
   }
 }
