@@ -20,4 +20,4 @@ backend/src/**/*.pyc
 *.log
 Dockerfile.frontend
 Dockerfile.backend
-docker-compose.yml
+docker-compose.yaml

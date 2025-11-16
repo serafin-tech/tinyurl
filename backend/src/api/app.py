@@ -1,6 +1,8 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import UTC, datetime
 
@@ -53,6 +55,16 @@ openapi_tags = [
     },
 ]
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - trivial startup hook
+    """Ensure database tables exist at startup (MVP: no migrations)."""
+    # Startup
+    init_db()
+    yield
+    # Shutdown (if needed)
+
+
 app = FastAPI(
     title="TinyURL Backend MVP",
     version="0.1.0",
@@ -62,13 +74,9 @@ app = FastAPI(
         "cache semantics."
     ),
     openapi_tags=openapi_tags,
+    lifespan=lifespan,
 )
 
-
-@app.on_event("startup")
-def _init_tables() -> None:  # pragma: no cover - trivial startup hook
-    """Ensure database tables exist at startup (MVP: no migrations)."""
-    init_db()
 
 # Enable CORS for local UI development (configure origins via ALLOW_ORIGINS, comma-separated)
 _origins = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
