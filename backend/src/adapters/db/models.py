@@ -1,5 +1,4 @@
 """SQLAlchemy models for TinyURL backend (SQLite)."""
-from __future__ import annotations
 
 from datetime import UTC, datetime
 
