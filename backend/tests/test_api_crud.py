@@ -109,7 +109,7 @@ def test_redirect_deleted_returns_410(client: TestClient) -> None:
     token = r.json()["edit_token"]
     del_resp = client.delete(f"/api/links/{link_id}", headers={"X-Edit-Token": token})
     assert del_resp.status_code == 200
-    # Redirect now
+    # Test redirect after deletion
     resp = client.get(f"/{link_id}", allow_redirects=False)
     assert resp.status_code == 410
 

@@ -1,9 +1,10 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
 from dataclasses import asdict
+from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.adapters.db.repository import LinkRepository
@@ -11,8 +12,8 @@ from src.api.deps import (
     get_base_url,
     get_db,
     get_edit_token,
-    get_token_pepper,
     get_permanent_cache_seconds,
+    get_token_pepper,
 )
 from src.api.schemas import (
     CreateLinkRequest,
@@ -64,7 +65,7 @@ async def redirect_link(
     if not link.active:
         raise HTTPException(status_code=410, detail="gone")
     # Expired
-    if link.expires_at and link.expires_at <= link.updated_at:
+    if link.expires_at and link.expires_at <= datetime.now(UTC):
         raise HTTPException(status_code=410, detail="gone")
 
     headers: dict[str, str] = {}
@@ -72,7 +73,11 @@ async def redirect_link(
         headers["Cache-Control"] = f"public, max-age={permanent_cache_seconds}, immutable"
     else:
         headers["Cache-Control"] = "no-store"
-    return JSONResponse(status_code=link.redirect_code, headers={"Location": link.target_url, **headers}, content=None)
+    return RedirectResponse(
+        url=link.target_url,
+        status_code=link.redirect_code,
+        headers=headers
+    )
 
 
 @app.exception_handler(ValidationError)
