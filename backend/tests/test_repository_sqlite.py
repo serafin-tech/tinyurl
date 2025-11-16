@@ -1,19 +1,17 @@
 """Repository integration tests for SQLite adapter."""
 
-from src.domain.constants import HTTP_308_PERMANENT_REDIRECT
-from src.domain.errors import NotFoundError
-from src.adapters.db.session import SessionLocal, engine
 import os
-import pytest
-
-from src.adapters.db.models import Base
-from src.adapters.db.repository import LinkRepository
-
 # Ensure SQLite points to a writable path for tests before importing session
 _TEST_DB_DIR = os.path.join(os.path.dirname(__file__), ".tmp")
 os.environ.setdefault("SQLITE_DB_PATH", os.path.join(_TEST_DB_DIR, "links.db"))
 
+from src.domain.constants import HTTP_308_PERMANENT_REDIRECT
+from src.domain.errors import NotFoundError
+from src.adapters.db.session import SessionLocal, engine
+import pytest
 
+from src.adapters.db.models import Base
+from src.adapters.db.repository import LinkRepository
 def setup_module() -> None:
     """Ensure tables exist for local SQLite file engine."""
     Base.metadata.create_all(bind=engine)
