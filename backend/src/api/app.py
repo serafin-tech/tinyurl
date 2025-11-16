@@ -1,13 +1,20 @@
 """FastAPI application entrypoint for TinyURL Backend MVP."""
 
 from dataclasses import asdict
+from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.adapters.db.repository import LinkRepository
-from src.api.deps import get_base_url, get_db, get_edit_token, get_token_pepper
+from src.api.deps import (
+    get_base_url,
+    get_db,
+    get_edit_token,
+    get_permanent_cache_seconds,
+    get_token_pepper,
+)
 from src.api.schemas import (
     CreateLinkRequest,
     CreateLinkResponse,
@@ -34,6 +41,43 @@ app = FastAPI(title="TinyURL Backend MVP", version="0.1.0")
 async def health() -> dict[str, str]:
     """Simple health check endpoint."""
     return {"status": "ok"}
+
+
+@app.api_route("/{link_id}", methods=["GET", "HEAD"])
+async def redirect_link(
+    link_id: str,
+    db: Session = Depends(get_db),
+    permanent_cache_seconds: int = Depends(get_permanent_cache_seconds),
+):
+    """Redirect to the target URL based on stored link configuration.
+
+    Returns 404 if link not found, 410 if deleted or expired. Applies cache headers:
+    - 301/308: Cache-Control with max-age (configurable) & immutable hint
+    - 302/307: no-store
+    """
+    repo = LinkRepository(db)
+    try:
+        link = repo.get(link_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail="not found") from exc
+
+    # Deleted or inactive
+    if not link.active:
+        raise HTTPException(status_code=410, detail="gone")
+    # Expired
+    if link.expires_at and link.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=410, detail="gone")
+
+    headers: dict[str, str] = {}
+    if link.redirect_code in (301, 308):
+        headers["Cache-Control"] = f"public, max-age={permanent_cache_seconds}, immutable"
+    else:
+        headers["Cache-Control"] = "no-store"
+    return RedirectResponse(
+        url=link.target_url,
+        status_code=link.redirect_code,
+        headers=headers
+    )
 
 
 @app.exception_handler(ValidationError)
