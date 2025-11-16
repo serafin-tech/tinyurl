@@ -66,6 +66,8 @@ class LinkRepository:
         try:
             self.session.flush()
         except IntegrityError as exc:  # unique/link_id conflict
+            # Ensure session can continue after a failed flush
+            self.session.rollback()
             raise ConflictError("link_id already exists") from exc
         return _to_entity(model)
 
@@ -122,5 +124,9 @@ class LinkRepository:
         )
         self.session.add(cloned)
         self.session.delete(model)
-        self.session.flush()
+        try:
+            self.session.flush()
+        except IntegrityError as exc:
+            self.session.rollback()
+            raise ConflictError("new_link_id already exists") from exc
         return _to_entity(cloned)
