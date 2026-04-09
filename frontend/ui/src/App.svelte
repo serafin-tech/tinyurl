@@ -1,6 +1,6 @@
 <script lang="ts">
   import './style.css'
-  import { createLink, updateLink, deleteLink, type CreateLinkPayload, type CreateLinkResponse } from './lib/api'
+  import { createLink, updateLink, deleteLink, getLink, type CreateLinkPayload, type CreateLinkResponse, type LinkOut } from './lib/api'
 
   let createForm = $state<CreateLinkPayload>({ target_url: '', link_id: '', redirect_code: 301 })
   let createResult = $state<CreateLinkResponse | null>(null)
@@ -19,10 +19,16 @@
   let delError = $state<string | null>(null)
   let delResult = $state<unknown>(null)
 
-  const redirectTester = $state({
+  const redirectTester = $state<{
+    linkId: string
+    status: string
+    location: string
+    active: boolean | null
+  }>({
     linkId: '',
     status: '',
-    location: ''
+    location: '',
+    active: null
   })
 
   async function onCreate() {
@@ -67,13 +73,12 @@
   async function testRedirect() {
     redirectTester.status = ''
     redirectTester.location = ''
+    redirectTester.active = null
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:8000'}/${encodeURIComponent(redirectTester.linkId)}`, {
-        method: 'GET',
-        redirect: 'manual'
-      })
-      redirectTester.status = String(res.status)
-      redirectTester.location = res.headers.get('Location') || ''
+      const link: LinkOut = await getLink(redirectTester.linkId)
+      redirectTester.status = String(link.redirect_code)
+      redirectTester.location = link.target_url
+      redirectTester.active = link.active
     } catch (e: unknown) {
       redirectTester.status = 'error'
       redirectTester.location = e instanceof Error ? e.message : String(e)
@@ -165,6 +170,6 @@
     <label>Link ID</label>
     <input bind:value={redirectTester.linkId} placeholder="id-to-test" />
     <button onclick={testRedirect}>Test</button>
-    <p class="small">Status: {redirectTester.status} | Location: {redirectTester.location}</p>
+    <p class="small">Redirect code: {redirectTester.status} | Target: {redirectTester.location} | Active: {redirectTester.active ?? '—'}</p>
   </div>
 </div>

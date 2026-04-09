@@ -207,6 +207,30 @@ async def create_link(
     )
 
 
+@app.get(
+    "/api/links/{link_id}",
+    response_model=LinkOut,
+    tags=["Links"],
+    summary="Get link details",
+    description="Retrieve metadata for a short link without triggering a redirect.",
+)
+async def get_link(
+    link_id: str,
+    db: AsyncIOMotorCollection = Depends(get_db),
+) -> LinkOut:
+    """Return link metadata for active links; 404 if missing, 410 if gone."""
+    repo = LinkRepository(db)
+    try:
+        link = await repo.get(link_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Link not found") from exc
+
+    if not link.active or (link.expires_at and link.expires_at <= datetime.now(UTC)):
+        raise HTTPException(status_code=410, detail="gone")
+
+    return LinkOut(**asdict(link))
+
+
 @app.patch(
     "/api/links/{link_id}",
     response_model=LinkOut,
