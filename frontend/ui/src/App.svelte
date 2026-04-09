@@ -2,6 +2,9 @@
   import './style.css'
   import { createLink, updateLink, deleteLink, getLink, type CreateLinkPayload, type CreateLinkResponse, type LinkOut } from './lib/api'
 
+  type Tab = 'create' | 'edit' | 'delete' | 'test'
+  let activeTab = $state<Tab>('create')
+
   let createForm = $state<CreateLinkPayload>({ target_url: '', link_id: '', redirect_code: 301 })
   let createResult = $state<CreateLinkResponse | null>(null)
   let createError = $state<string | null>(null)
@@ -89,87 +92,99 @@
 <div class="container">
   <h1>TinyURL UI</h1>
 
-  <div class="card">
-    <h2>Create short link</h2>
-    <label>Target URL</label>
-    <input bind:value={createForm.target_url} placeholder="https://example.com" />
-    <div class="grid">
-      <div>
-        <label>Custom alias (optional)</label>
-        <input bind:value={createForm.link_id} placeholder="my-alias" />
-      </div>
-      <div>
-        <label>Redirect code</label>
-        <select bind:value={createForm.redirect_code}>
-          <option value={301}>301</option>
-          <option value={302}>302</option>
-          <option value={307}>307</option>
-          <option value={308}>308</option>
-        </select>
-      </div>
-    </div>
-    <button onclick={onCreate}>Create</button>
-    {#if createError}
-      <p class="small">Error: {createError}</p>
-    {/if}
-    {#if createResult}
-      <pre>{JSON.stringify(createResult, null, 2)}</pre>
-    {/if}
+  <div class="tabs">
+    <button class:active={activeTab === 'create'} onclick={() => activeTab = 'create'}>Create</button>
+    <button class:active={activeTab === 'edit'} onclick={() => activeTab = 'edit'}>Edit</button>
+    <button class:active={activeTab === 'delete'} onclick={() => activeTab = 'delete'}>Delete</button>
+    <button class:active={activeTab === 'test'} onclick={() => activeTab = 'test'}>Test redirect</button>
   </div>
 
-  <div class="card">
-    <h2>Update link</h2>
-    <label>Link ID</label>
-    <input bind:value={updLinkId} placeholder="existing-id" />
-    <label>Edit token</label>
-    <input bind:value={updToken} placeholder="paste edit token" />
-    <div class="grid">
-      <div>
-        <label>New target URL</label>
-        <input bind:value={updTarget} placeholder="https://example.com/new" />
+  <div class="card tab-panel">
+    {#if activeTab === 'create'}
+      <h2>Create short link</h2>
+      <label>Target URL</label>
+      <input bind:value={createForm.target_url} placeholder="https://example.com" />
+      <div class="grid">
+        <div>
+          <label>Custom alias (optional)</label>
+          <input bind:value={createForm.link_id} placeholder="my-alias" />
+        </div>
+        <div>
+          <label>Redirect code</label>
+          <select bind:value={createForm.redirect_code}>
+            <option value={301}>301</option>
+            <option value={302}>302</option>
+            <option value={307}>307</option>
+            <option value={308}>308</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label>New redirect code</label>
-        <select bind:value={updCode}>
-          <option value="">(no change)</option>
-          <option value={301}>301</option>
-          <option value={302}>302</option>
-          <option value={307}>307</option>
-          <option value={308}>308</option>
-        </select>
+      <button onclick={onCreate}>Create</button>
+      {#if createError}
+        <p class="error">Error: {createError}</p>
+      {/if}
+      {#if createResult}
+        <pre>{JSON.stringify(createResult, null, 2)}</pre>
+      {/if}
+
+    {:else if activeTab === 'edit'}
+      <h2>Edit link</h2>
+      <label>Link ID</label>
+      <input bind:value={updLinkId} placeholder="existing-id" />
+      <label>Edit token</label>
+      <input bind:value={updToken} placeholder="paste edit token" />
+      <div class="grid">
+        <div>
+          <label>New target URL</label>
+          <input bind:value={updTarget} placeholder="https://example.com/new" />
+        </div>
+        <div>
+          <label>New redirect code</label>
+          <select bind:value={updCode}>
+            <option value="">(no change)</option>
+            <option value={301}>301</option>
+            <option value={302}>302</option>
+            <option value={307}>307</option>
+            <option value={308}>308</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <label>Change alias to</label>
-    <input bind:value={updNewAlias} placeholder="new-alias" />
-    <button onclick={onUpdate}>Update</button>
-    {#if updError}
-      <p class="small">Error: {updError}</p>
-    {/if}
-    {#if updResult}
-      <pre>{JSON.stringify(updResult, null, 2)}</pre>
-    {/if}
-  </div>
+      <label>Change alias to</label>
+      <input bind:value={updNewAlias} placeholder="new-alias" />
+      <button onclick={onUpdate}>Update</button>
+      {#if updError}
+        <p class="error">Error: {updError}</p>
+      {/if}
+      {#if updResult}
+        <pre>{JSON.stringify(updResult, null, 2)}</pre>
+      {/if}
 
-  <div class="card">
-    <h2>Delete link</h2>
-    <label>Link ID</label>
-    <input bind:value={delLinkId} placeholder="existing-id" />
-    <label>Edit token</label>
-    <input bind:value={delToken} placeholder="paste edit token" />
-    <button onclick={onDelete}>Delete</button>
-    {#if delError}
-      <p class="small">Error: {delError}</p>
-    {/if}
-    {#if delResult}
-      <pre>{JSON.stringify(delResult, null, 2)}</pre>
-    {/if}
-  </div>
+    {:else if activeTab === 'delete'}
+      <h2>Delete link</h2>
+      <label>Link ID</label>
+      <input bind:value={delLinkId} placeholder="existing-id" />
+      <label>Edit token</label>
+      <input bind:value={delToken} placeholder="paste edit token" />
+      <button class="danger" onclick={onDelete}>Delete</button>
+      {#if delError}
+        <p class="error">Error: {delError}</p>
+      {/if}
+      {#if delResult}
+        <pre>{JSON.stringify(delResult, null, 2)}</pre>
+      {/if}
 
-  <div class="card">
-    <h2>Redirect tester</h2>
-    <label>Link ID</label>
-    <input bind:value={redirectTester.linkId} placeholder="id-to-test" />
-    <button onclick={testRedirect}>Test</button>
-    <p class="small">Redirect code: {redirectTester.status} | Target: {redirectTester.location} | Active: {redirectTester.active ?? '—'}</p>
+    {:else if activeTab === 'test'}
+      <h2>Test redirect</h2>
+      <label>Link ID</label>
+      <input bind:value={redirectTester.linkId} placeholder="id-to-test" />
+      <button onclick={testRedirect}>Test</button>
+      {#if redirectTester.status}
+        <div class="result-row">
+          <span class="label">Redirect code</span><span>{redirectTester.status}</span>
+          <span class="label">Target</span><span>{redirectTester.location}</span>
+          <span class="label">Active</span><span>{redirectTester.active ?? '—'}</span>
+        </div>
+      {/if}
+    {/if}
   </div>
 </div>
