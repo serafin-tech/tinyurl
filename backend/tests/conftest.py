@@ -1,36 +1,34 @@
-"""Pytest fixtures and environment setup for tests."""
+"""Pytest fixtures for MongoDB-backed tests using mongomock-motor."""
 
-import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy.orm import Session
+import pytest_asyncio
+from mongomock_motor import AsyncMongoMockClient
+from motor.motor_asyncio import AsyncIOMotorCollection
 
-from src.adapters.db.models import Base
-from src.adapters.db.session import SessionLocal, engine
-
-# Ensure SQLite points to a writable path for tests before session usage
-_TEST_DB_DIR = os.path.join(os.path.dirname(__file__), ".tmp")
-os.makedirs(_TEST_DB_DIR, exist_ok=True)
-os.environ.setdefault("SQLITE_DB_PATH", os.path.join(_TEST_DB_DIR, "links.db"))
+from src.api.app import app
+from src.api.deps import get_db
 
 
-@pytest.fixture(scope="session", autouse=True)
-def init_db() -> None:
-    """Create tables once per test session."""
-    Base.metadata.create_all(bind=engine)
+@pytest_asyncio.fixture
+async def mongo_collection() -> AsyncIterator[AsyncIOMotorCollection]:  # type: ignore[type-arg]
+    """Yield an in-process mock MongoDB links collection, cleared between tests."""
+    client = AsyncMongoMockClient()
+    collection = client["tinyurl"]["links"]
+    # Unique index mirrors production setup
+    await collection.create_index("link_id", unique=True)
+    yield collection
+    await collection.drop()
 
 
-@pytest.fixture
-def db_session() -> Iterator[Session]:
-    """Provide a clean database session for each test with automatic cleanup."""
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    finally:
-        # Clean up: delete all test data
-        session.rollback()
-        session.execute(Base.metadata.tables["links"].delete())
-        session.commit()
-        session.close()
+@pytest.fixture(autouse=False)
+def override_db(mongo_collection: AsyncIOMotorCollection):  # type: ignore[type-arg]
+    """Override the FastAPI get_db dependency to use the test collection."""
+
+    async def _get_test_db() -> AsyncIterator[AsyncIOMotorCollection]:  # type: ignore[type-arg]
+        yield mongo_collection
+
+    app.dependency_overrides[get_db] = _get_test_db
+    yield
+    app.dependency_overrides.pop(get_db, None)

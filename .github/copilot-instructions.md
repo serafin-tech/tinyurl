@@ -112,18 +112,13 @@ See application description in [docs/REQUIREMENTS.md](../docs/REQUIREMENTS.md).
 
 ## DATABASE
 
-### Guidelines for SQLite
+### Guidelines for NOSQL
 
-#### SQLITE_BEST_PRACTICES
+#### MONGODB
 
-- Use WAL (Write-Ahead Logging) mode for better concurrency in read-heavy applications
-- Implement proper indexing strategies on frequently queried columns to optimize read performance
-- Use parameterized queries to prevent SQL injection attacks
-- Regularly vacuum the database to reclaim unused space and optimize performance
-- Use transactions for batch operations to ensure atomicity and improve performance
-- Normalize database schema to reduce redundancy and improve data integrity
-- Implement foreign key constraints to maintain referential integrity between tables
-
+- Use the aggregation framework for complex queries instead of multiple queries
+- Implement schema validation to ensure data consistency for tinyurl documents
+- Use indexes for frequently queried fields to improve performance
 ## DEVOPS
 
 ### Guidelines for CONTAINERIZATION

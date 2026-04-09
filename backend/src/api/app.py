@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 from src.adapters.db.repository import LinkRepository
 from src.adapters.db.session import init_db
@@ -58,11 +58,9 @@ openapi_tags = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - trivial startup hook
-    """Ensure database tables exist at startup (MVP: no migrations)."""
-    # Startup
-    init_db()
+    """Ensure MongoDB indexes exist at startup."""
+    await init_db()
     yield
-    # Shutdown (if needed)
 
 
 app = FastAPI(
@@ -107,7 +105,7 @@ async def health() -> dict[str, str]:
 )
 async def redirect_link(
     link_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncIOMotorCollection = Depends(get_db),
     permanent_cache_seconds: int = Depends(get_permanent_cache_seconds),
 ):
     """Redirect to the target URL based on stored link configuration.
@@ -118,7 +116,7 @@ async def redirect_link(
     """
     repo = LinkRepository(db)
     try:
-        link = repo.get(link_id)
+        link = await repo.get(link_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail="not found") from exc
 
@@ -161,7 +159,7 @@ async def handle_validation_error(
 )
 async def create_link(
     payload: CreateLinkRequest,
-    db: Session = Depends(get_db),
+    db: AsyncIOMotorCollection = Depends(get_db),
     base_url: str = Depends(get_base_url),
     pepper: str | None = Depends(get_token_pepper),
 ) -> CreateLinkResponse:
@@ -176,19 +174,19 @@ async def create_link(
     if payload.link_id:
         link_id = normalize_link_id(payload.link_id)
         validate_link_id(link_id)
-        if repo.exists(link_id):
+        if await repo.exists(link_id):
             raise HTTPException(
                 status_code=409, detail="link_id already taken")
     else:
         # Generate a unique id using the repository exists() check
-        link_id = generate_unique_link_id(repo.exists)
+        link_id = await generate_unique_link_id(repo.exists)
 
     # Create edit token and hash
     edit_token = generate_edit_token()
     edit_token_hash = hash_token(edit_token, pepper=pepper)
 
     try:
-        link = repo.create(
+        link = await repo.create(
             link_id=link_id,
             target_url=target_url,
             redirect_code=redirect_code,
@@ -222,7 +220,7 @@ async def create_link(
 async def update_link(
     link_id: str,
     payload: UpdateLinkRequest,
-    db: Session = Depends(get_db),
+    db: AsyncIOMotorCollection = Depends(get_db),
     pepper: str | None = Depends(get_token_pepper),
     edit_token: str = Depends(get_edit_token),
 ) -> LinkOut:
@@ -235,7 +233,7 @@ async def update_link(
 
     # fetch link to access stored hash
     try:
-        current = repo.get(link_id)
+        current = await repo.get(link_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail="Link not found") from exc
 
@@ -253,11 +251,11 @@ async def update_link(
     if payload.new_link_id:
         new_alias = normalize_link_id(payload.new_link_id)
         validate_link_id(new_alias)
-        if repo.exists(new_alias):
+        if await repo.exists(new_alias):
             raise HTTPException(
                 status_code=409, detail="new_link_id already taken")
         try:
-            updated = repo.change_id(link_id, new_alias)
+            updated = await repo.change_id(link_id, new_alias)
         except NotFoundError as exc:
             raise HTTPException(
                 status_code=404, detail="Link not found") from exc
@@ -265,7 +263,7 @@ async def update_link(
 
     # Partial update
     try:
-        updated = repo.update(
+        updated = await repo.update(
             link_id,
             target_url=new_target,
             redirect_code=new_code,
@@ -287,7 +285,7 @@ async def update_link(
 )
 async def delete_link(
     link_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncIOMotorCollection = Depends(get_db),
     pepper: str | None = Depends(get_token_pepper),
     edit_token: str = Depends(get_edit_token),
 ) -> dict[str, str]:
@@ -295,7 +293,7 @@ async def delete_link(
     repo = LinkRepository(db)
     # Fetch and verify token
     try:
-        current = repo.get(link_id)
+        current = await repo.get(link_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail="Link not found") from exc
 
@@ -304,7 +302,7 @@ async def delete_link(
 
     # Soft-delete
     try:
-        link = repo.update(link_id, active=False)
+        link = await repo.update(link_id, active=False)
     except NotFoundError as exc:  # should not happen if get succeeded
         raise HTTPException(status_code=404, detail="Link not found") from exc
     return {"status": "deleted", "link_id": link.link_id}

@@ -1,5 +1,4 @@
 """Domain-level exceptions used across use cases and validators."""
-from __future__ import annotations
 
 
 class DomainError(Exception):

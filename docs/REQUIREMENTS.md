@@ -63,7 +63,7 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Security
 
-1. Link creation is public but rate-limited (e.g., 100/min/IP for create/update; reasonable limits for delete).
+1. Link creation is public, no rate-limitting required.
 2. Each created link returns an edit token:
    - 24-character random string from `[A-Za-z0-9]` (≈143 bits entropy).
    - Store only a SHA-256 hash (optionally with a server-side pepper); never store plaintext.
@@ -129,7 +129,7 @@ graph TD
 - URL Service: ID generation; writes/updates/deletes; cache invalidation.
 - Redirect Service: High-performance lookups; serves redirects from cache.
 - Cache: In-memory/Redis for hot lookups.
-- DB: Persistent store (e.g., SQLite for dev; PostgreSQL for prod).
+- DB: Persistent store (MongoDB).
 
 ## Technology suggestions
 
@@ -137,4 +137,4 @@ graph TD
 - API/Backend: Python (FastAPI)
 - API Gateway: Nginx
 - Cache: Redis
-- Database: SQLite (dev/small) or PostgreSQL (prod)
+- Database: MongoDB

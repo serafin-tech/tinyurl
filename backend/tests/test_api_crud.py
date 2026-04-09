@@ -8,10 +8,13 @@ from src.api.app import app
 
 
 @pytest_asyncio.fixture(name="client")
-async def _client_fixture(monkeypatch: pytest.MonkeyPatch) -> httpx.AsyncClient:
-    """Provide an AsyncClient with ASGITransport; DB path via shared conftest."""
+async def _client_fixture(
+    override_db: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> httpx.AsyncClient:
+    """Provide an AsyncClient with ASGITransport backed by a mock MongoDB collection."""
     monkeypatch.setenv("BASE_URL", "http://testserver")
-    monkeypatch.delenv("EDIT_TOKEN_PEPPER", raising=False)
+    monkeypatch.delenv("TOKEN_PEPPER", raising=False)
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as ac:
         yield ac
