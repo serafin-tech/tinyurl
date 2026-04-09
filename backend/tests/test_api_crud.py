@@ -46,7 +46,22 @@ async def test_get_link_not_found(client: httpx.AsyncClient) -> None:
     assert r.status_code == 404
 
 
+@pytest.mark.asyncio
+async def test_get_link_returns_410_for_deleted(client: httpx.AsyncClient) -> None:
+    """GET /api/links/{link_id} returns 410 for deleted (inactive) links."""
+    r = await client.post("/api/links", json={"target_url": "https://example.com/gone"})
+    assert r.status_code == 200
+    link_id = r.json()["link_id"]
+    token = r.json()["edit_token"]
+    del_resp = await client.delete(f"/api/links/{link_id}", headers={"X-Edit-Token": token})
+    assert del_resp.status_code == 200
 
+    r2 = await client.get(f"/api/links/{link_id}")
+    assert r2.status_code == 410
+
+
+@pytest.mark.asyncio
+async def test_crud_update_then_delete(client: httpx.AsyncClient) -> None:
     """Create a link, update with valid token, then delete with same token."""
     # Create link
     r = await client.post(
