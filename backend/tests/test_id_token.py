@@ -14,16 +14,21 @@ from src.domain.id_token import (
 )
 
 
-def test_generate_unique_link_id_no_collision() -> None:
+@pytest.mark.asyncio
+async def test_generate_unique_link_id_no_collision() -> None:
     """Simple path: generates a 6-char lowercase hex id with no collision."""
-    ids: set[str] = set()
-    exists = ids.__contains__
-    new_id = generate_unique_link_id(exists)
+    taken: set[str] = set()
+
+    async def exists(link_id: str) -> bool:
+        return link_id in taken
+
+    new_id = await generate_unique_link_id(exists)
     assert isinstance(new_id, str) and len(new_id) == 6
     assert all(ch in "0123456789abcdef" for ch in new_id)
 
 
-def test_generate_unique_link_id_with_collision_then_success(
+@pytest.mark.asyncio
+async def test_generate_unique_link_id_with_collision_then_success(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """First candidate collides, second is unique."""
@@ -35,19 +40,28 @@ def test_generate_unique_link_id_with_collision_then_success(
     monkeypatch.setattr(mod.secrets, "token_hex", fake_token_hex)
 
     taken = {"deadbe"}
-    new_id = mod.generate_unique_link_id(taken.__contains__)
+
+    async def exists(link_id: str) -> bool:
+        return link_id in taken
+
+    new_id = await generate_unique_link_id(exists)
     assert new_id == "b16b00"
 
 
-def test_generate_unique_link_id_exhaustion(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.asyncio
+async def test_generate_unique_link_id_exhaustion(monkeypatch: pytest.MonkeyPatch) -> None:
     """Exhaust retries and raise GenerationError on repeated collisions."""
 
     def always_collision(*_args: object, **_kwargs: object) -> str:
         return "ffffff"
 
     monkeypatch.setattr(mod.secrets, "token_hex", always_collision)
+
+    async def always_exists(link_id: str) -> bool:
+        return True
+
     with pytest.raises(GenerationError):
-        mod.generate_unique_link_id(lambda _: True, max_attempts=3)
+        await generate_unique_link_id(always_exists, max_attempts=3)
 
 
 def test_edit_token_hash_and_verify() -> None:

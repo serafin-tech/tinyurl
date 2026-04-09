@@ -1,5 +1,4 @@
 """Validation helpers for TinyURL domain."""
-from __future__ import annotations
 
 import re
 from urllib.parse import urlsplit, urlunsplit

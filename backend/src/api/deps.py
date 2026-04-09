@@ -1,28 +1,18 @@
-"""FastAPI dependencies for DB sessions and configuration."""
+"""FastAPI dependencies for DB collection access and configuration."""
 
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 
 from fastapi import Header, HTTPException
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorCollection
 
-from src.adapters.db.session import SessionLocal
+from src.adapters.db.session import get_db as _get_db
 
 
-def get_db() -> Iterator[Session]:
-    """Yield a SQLAlchemy Session for request lifespan with commit/rollback.
-
-    Commits the transaction if the request handling succeeds, otherwise rolls back.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+async def get_db() -> AsyncIterator[AsyncIOMotorCollection]:
+    """Yield the MongoDB links collection for request lifespan."""
+    async for collection in _get_db():
+        yield collection
 
 
 def get_base_url() -> str:
@@ -32,7 +22,7 @@ def get_base_url() -> str:
 
 def get_token_pepper() -> str | None:
     """Optional server-side pepper for edit-token hashing."""
-    return os.getenv("EDIT_TOKEN_PEPPER")
+    return os.getenv("TOKEN_PEPPER")
 
 
 def get_permanent_cache_seconds() -> int:

@@ -1,43 +1,39 @@
-"""Database engine and session management (SQLite)."""
+"""MongoDB client and collection access for TinyURL backend."""
+
 import os
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
-from .models import Base
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 
-def _sqlite_url() -> str:
-    # Default to a workspace-local path for dev/tests; override via
-    # SQLITE_DB_PATH in prod/containers
-    path = os.getenv("SQLITE_DB_PATH", os.path.join(
-        os.getcwd(), "data", "links.db"))
-    # Ensure directory exists for file-based DB in local dev
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return f"sqlite+pysqlite:///{path}"
+def _mongodb_uri() -> str:
+    return os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 
 
-engine = create_engine(_sqlite_url(), echo=False, future=True)
-SessionLocal = sessionmaker(
-    bind=engine, class_=Session, expire_on_commit=False, future=True)
+def _db_name() -> str:
+    return os.getenv("MONGODB_DB", "tinyurl")
 
 
-def init_db() -> None:
-    """Create tables if they don't exist (MVP: no migrations)."""
-    Base.metadata.create_all(bind=engine)
+# Module-level client — created once; reused across requests
+_client: AsyncIOMotorClient | None = None
 
 
-@contextmanager
-def get_session() -> Iterator[Session]:
-    """Provide a transactional scope around a series of operations."""
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+def get_client() -> AsyncIOMotorClient:
+    """Return (or lazily create) the module-level Motor client."""
+    global _client  # noqa: PLW0603 - intentional module-level singleton
+    if _client is None:
+        _client = AsyncIOMotorClient(_mongodb_uri(), tz_aware=True)
+    return _client
+
+
+async def init_db() -> None:
+    """Ensure required indexes exist (idempotent)."""
+    collection = get_client()[_db_name()]["links"]
+    # link_id is the primary identifier; uniqueness enforced at DB level
+    await collection.create_index("link_id", unique=True, background=True)
+
+
+async def get_db() -> AsyncIterator[AsyncIOMotorCollection]:
+    """Yield the links collection (no transaction needed for MVP)."""
+    yield get_client()[_db_name()]["links"]
+

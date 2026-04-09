@@ -2,28 +2,28 @@
   import './style.css'
   import { createLink, updateLink, deleteLink, type CreateLinkPayload, type CreateLinkResponse } from './lib/api'
 
-  let createForm: CreateLinkPayload = { target_url: '', link_id: '', redirect_code: 301 }
-  let createResult: CreateLinkResponse | null = null
-  let createError: string | null = null
+  let createForm = $state<CreateLinkPayload>({ target_url: '', link_id: '', redirect_code: 301 })
+  let createResult = $state<CreateLinkResponse | null>(null)
+  let createError = $state<string | null>(null)
 
-  let updLinkId = ''
-  let updToken = ''
-  let updTarget = ''
-  let updCode: 301 | 302 | 307 | 308 | '' = ''
-  let updNewAlias = ''
-  let updError: string | null = null
-  let updResult: any = null
+  let updLinkId = $state('')
+  let updToken = $state('')
+  let updTarget = $state('')
+  let updCode = $state<301 | 302 | 307 | 308 | ''>('')
+  let updNewAlias = $state('')
+  let updError = $state<string | null>(null)
+  let updResult = $state<unknown>(null)
 
-  let delLinkId = ''
-  let delToken = ''
-  let delError: string | null = null
-  let delResult: any = null
+  let delLinkId = $state('')
+  let delToken = $state('')
+  let delError = $state<string | null>(null)
+  let delResult = $state<unknown>(null)
 
-  const redirectTester = {
+  const redirectTester = $state({
     linkId: '',
     status: '',
     location: ''
-  }
+  })
 
   async function onCreate() {
     createError = null
@@ -35,8 +35,8 @@
         redirect_code: createForm.redirect_code
       }
       createResult = await createLink(payload)
-    } catch (e: any) {
-      createError = e?.message || String(e)
+    } catch (e: unknown) {
+      createError = e instanceof Error ? e.message : String(e)
     }
   }
 
@@ -44,13 +44,13 @@
     updError = null
     updResult = null
     try {
-      const data: any = {}
+      const data: Record<string, unknown> = {}
       if (updTarget) data.target_url = updTarget
       if (updCode) data.redirect_code = updCode
       if (updNewAlias) data.new_link_id = updNewAlias
       updResult = await updateLink(updLinkId, updToken, data)
-    } catch (e: any) {
-      updError = e?.message || String(e)
+    } catch (e: unknown) {
+      updError = e instanceof Error ? e.message : String(e)
     }
   }
 
@@ -59,8 +59,8 @@
     delResult = null
     try {
       delResult = await deleteLink(delLinkId, delToken)
-    } catch (e: any) {
-      delError = e?.message || String(e)
+    } catch (e: unknown) {
+      delError = e instanceof Error ? e.message : String(e)
     }
   }
 
@@ -74,9 +74,9 @@
       })
       redirectTester.status = String(res.status)
       redirectTester.location = res.headers.get('Location') || ''
-    } catch (e: any) {
+    } catch (e: unknown) {
       redirectTester.status = 'error'
-      redirectTester.location = e?.message || String(e)
+      redirectTester.location = e instanceof Error ? e.message : String(e)
     }
   }
 </script>
@@ -103,7 +103,7 @@
         </select>
       </div>
     </div>
-    <button on:click={onCreate}>Create</button>
+    <button onclick={onCreate}>Create</button>
     {#if createError}
       <p class="small">Error: {createError}</p>
     {/if}
@@ -136,7 +136,7 @@
     </div>
     <label>Change alias to</label>
     <input bind:value={updNewAlias} placeholder="new-alias" />
-    <button on:click={onUpdate}>Update</button>
+    <button onclick={onUpdate}>Update</button>
     {#if updError}
       <p class="small">Error: {updError}</p>
     {/if}
@@ -151,7 +151,7 @@
     <input bind:value={delLinkId} placeholder="existing-id" />
     <label>Edit token</label>
     <input bind:value={delToken} placeholder="paste edit token" />
-    <button on:click={onDelete}>Delete</button>
+    <button onclick={onDelete}>Delete</button>
     {#if delError}
       <p class="small">Error: {delError}</p>
     {/if}
@@ -164,7 +164,7 @@
     <h2>Redirect tester</h2>
     <label>Link ID</label>
     <input bind:value={redirectTester.linkId} placeholder="id-to-test" />
-    <button on:click={testRedirect}>Test</button>
+    <button onclick={testRedirect}>Test</button>
     <p class="small">Status: {redirectTester.status} | Location: {redirectTester.location}</p>
   </div>
 </div>
