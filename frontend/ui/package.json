@@ -9,10 +9,10 @@
     "preview": "vite preview --port 5174"
   },
   "dependencies": {
-    "svelte": "^4.2.18"
+    "svelte": "^5.0.0"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@types/node": "^20.11.0",
     "typescript": "^5.5.4",
     "vite": "^5.2.10",

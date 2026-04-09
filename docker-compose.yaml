@@ -1,5 +1,21 @@
 ---
 services:
+  mongodb:
+    image: mongo:7
+    container_name: tinyurl-mongodb
+    volumes:
+      - tinyurl-mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --eval
+        - "db.adminCommand('ping')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -9,11 +25,13 @@ services:
     # Do NOT commit secrets to version control. See docs/REQUIREMENTS.md for details.
     environment:
       BASE_URL: http://localhost:8000
-      SQLITE_DB_PATH: /data/links.db
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DB: tinyurl
       TOKEN_PEPPER: ${TOKEN_PEPPER:-devpepper}
       ALLOW_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
-    volumes:
-      - tinyurl-data:/data
+    depends_on:
+      mongodb:
+        condition: service_healthy
     ports:
       - 8000:8000
     restart: unless-stopped
@@ -40,4 +58,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  tinyurl-data:
+  tinyurl-mongo-data:

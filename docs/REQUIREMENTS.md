@@ -128,7 +128,7 @@ graph TD
 - URL Service: ID generation; writes/updates/deletes; cache invalidation.
 - Redirect Service: High-performance lookups; serves redirects from cache.
 - Cache: In-memory/Redis for hot lookups.
-- DB: Persistent store (e.g., SQLite for dev; PostgreSQL for prod).
+- DB: Persistent store (MongoDB).
 
 ## Technology suggestions
 
@@ -136,4 +136,4 @@ graph TD
 - API/Backend: Python (FastAPI)
 - API Gateway: Nginx
 - Cache: Redis
-- Database: SQLite (dev/small) or PostgreSQL (prod)
+- Database: MongoDB

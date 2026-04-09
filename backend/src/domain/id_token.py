@@ -1,8 +1,8 @@
 """Services for link-id generation and edit token management.
 
 Contracts:
-- generate_unique_link_id(exists, max_attempts=5) -> str
-  - exists(id: str) -> bool is a callable checking persistence for collisions
+- generate_unique_link_id(exists, max_attempts=5) -> str (async)
+  - exists(id: str) -> Awaitable[bool] checks persistence for collisions
 - generate_edit_token(length=24) -> str (A-Za-z0-9)
 - hash_token(token: str, pepper: str | None = None) -> str (hex sha256)
 - verify_token(token: str, token_hash: str, pepper: str | None = None) -> bool
@@ -11,7 +11,7 @@ Contracts:
 import hashlib
 import secrets
 import string
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 
 from .errors import GenerationError
 
@@ -21,11 +21,13 @@ def _random_hex_id() -> str:
     return secrets.token_hex(3)
 
 
-def generate_unique_link_id(exists: Callable[[str], bool], max_attempts: int = 5) -> str:
+async def generate_unique_link_id(
+    exists: Callable[[str], Awaitable[bool]], max_attempts: int = 5
+) -> str:
     """Generate a unique 6-char hex link id with collision retries.
 
     Args:
-        exists: A callable that returns True if the given id already exists.
+        exists: An async callable that returns True if the given id already exists.
         max_attempts: Maximum attempts before raising GenerationError.
 
     Returns:
@@ -36,7 +38,7 @@ def generate_unique_link_id(exists: Callable[[str], bool], max_attempts: int = 5
     """
     for _ in range(max_attempts):
         candidate = _random_hex_id()
-        if not exists(candidate):
+        if not await exists(candidate):
             return candidate
     raise GenerationError("failed to generate unique link id")
 
