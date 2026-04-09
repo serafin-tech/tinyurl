@@ -22,7 +22,7 @@ def get_client() -> AsyncIOMotorClient:
     """Return (or lazily create) the module-level Motor client."""
     global _client  # noqa: PLW0603 - intentional module-level singleton
     if _client is None:
-        _client = AsyncIOMotorClient(_mongodb_uri())
+        _client = AsyncIOMotorClient(_mongodb_uri(), tz_aware=True)
     return _client
 
 
