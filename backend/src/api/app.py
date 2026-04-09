@@ -209,6 +209,26 @@ async def create_link(
     )
 
 
+@app.get(
+    "/api/links/{link_id}",
+    response_model=LinkOut,
+    tags=["Links"],
+    summary="Get link details",
+    description="Retrieve metadata for a short link without triggering a redirect.",
+)
+async def get_link(
+    link_id: str,
+    db: Session = Depends(get_db),
+) -> LinkOut:
+    """Return link metadata; 404 if not found."""
+    repo = LinkRepository(db)
+    try:
+        link = repo.get(link_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Link not found") from exc
+    return LinkOut(**asdict(link))
+
+
 @app.patch(
     "/api/links/{link_id}",
     response_model=LinkOut,

@@ -1,6 +1,6 @@
 <script lang="ts">
   import './style.css'
-  import { createLink, updateLink, deleteLink, type CreateLinkPayload, type CreateLinkResponse } from './lib/api'
+  import { createLink, updateLink, deleteLink, getLink, type CreateLinkPayload, type CreateLinkResponse, type LinkOut } from './lib/api'
 
   let createForm: CreateLinkPayload = { target_url: '', link_id: '', redirect_code: 301 }
   let createResult: CreateLinkResponse | null = null
@@ -22,7 +22,8 @@
   const redirectTester = {
     linkId: '',
     status: '',
-    location: ''
+    location: '',
+    active: null as boolean | null
   }
 
   async function onCreate() {
@@ -67,13 +68,12 @@
   async function testRedirect() {
     redirectTester.status = ''
     redirectTester.location = ''
+    redirectTester.active = null
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:8000'}/${encodeURIComponent(redirectTester.linkId)}`, {
-        method: 'GET',
-        redirect: 'manual'
-      })
-      redirectTester.status = String(res.status)
-      redirectTester.location = res.headers.get('Location') || ''
+      const link: LinkOut = await getLink(redirectTester.linkId)
+      redirectTester.status = String(link.redirect_code)
+      redirectTester.location = link.target_url
+      redirectTester.active = link.active
     } catch (e: any) {
       redirectTester.status = 'error'
       redirectTester.location = e?.message || String(e)
@@ -165,6 +165,12 @@
     <label>Link ID</label>
     <input bind:value={redirectTester.linkId} placeholder="id-to-test" />
     <button on:click={testRedirect}>Test</button>
-    <p class="small">Status: {redirectTester.status} | Location: {redirectTester.location}</p>
+    {#if redirectTester.status}
+      <p class="small">
+        Redirect code: {redirectTester.status} |
+        Target: {redirectTester.location} |
+        Active: {redirectTester.active}
+      </p>
+    {/if}
   </div>
 </div>

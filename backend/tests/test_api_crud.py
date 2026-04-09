@@ -18,7 +18,32 @@ async def _client_fixture(monkeypatch: pytest.MonkeyPatch) -> httpx.AsyncClient:
 
 
 @pytest.mark.asyncio
-async def test_create_then_update_and_delete_flow(client: httpx.AsyncClient) -> None:
+async def test_get_link_returns_metadata(client: httpx.AsyncClient) -> None:
+    """GET /api/links/{link_id} returns link metadata without redirecting."""
+    r = await client.post(
+        "/api/links",
+        json={"target_url": "https://example.com/meta", "redirect_code": 302},
+    )
+    assert r.status_code == 200
+    link_id = r.json()["link_id"]
+
+    r2 = await client.get(f"/api/links/{link_id}")
+    assert r2.status_code == 200
+    data = r2.json()
+    assert data["link_id"] == link_id
+    assert data["target_url"] == "https://example.com/meta"
+    assert data["redirect_code"] == 302
+    assert data["active"] is True
+
+
+@pytest.mark.asyncio
+async def test_get_link_not_found(client: httpx.AsyncClient) -> None:
+    """GET /api/links/{link_id} returns 404 for unknown link."""
+    r = await client.get("/api/links/no-such-link")
+    assert r.status_code == 404
+
+
+
     """Create a link, update with valid token, then delete with same token."""
     # Create link
     r = await client.post(

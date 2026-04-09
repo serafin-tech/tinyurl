@@ -44,6 +44,12 @@ export async function updateLink(linkId: string, token: string, data: Partial<Om
   return res.json();
 }
 
+export async function getLink(linkId: string): Promise<LinkOut> {
+  const res = await fetch(`${API_BASE}/api/links/${encodeURIComponent(linkId)}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function deleteLink(linkId: string, token: string): Promise<{ status: string; link_id: string }> {
   const res = await fetch(`${API_BASE}/api/links/${encodeURIComponent(linkId)}`, {
     method: 'DELETE',
