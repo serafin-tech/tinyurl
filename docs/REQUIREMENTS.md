@@ -63,14 +63,14 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Security
 
-1. Link creation is public, no rate-limitting required.
+1. Link creation is public; no rate limiting required.
 2. Each created link returns an edit token:
    - 24-character random string from `[A-Za-z0-9]` (≈143 bits entropy).
    - Store only a SHA-256 hash (optionally with a server-side pepper); never store plaintext.
    - Optionally rotate token on successful update.
 3. UI/API available only over HTTPS. Redirects may be served over HTTP and HTTPS (configurable).
 4. CSRF protection on form endpoints; CORS configured if exposing APIs to browsers.
-5. Abuse controls: domain blocklist, optional safe-browsing checks, and IP/User-Agent rate limiting.
+5. Abuse controls: domain blocklist and optional safe-browsing checks.
 6. Input validation and output encoding in UI to prevent XSS.
 
 ### SEO and redirects
@@ -89,7 +89,6 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 - 404 Not found
 - 409 Conflict (custom `link-id` already taken)
 - 410 Gone (deleted link)
-- 429 Too Many Requests (rate limiting)
 - 500/503 Server errors
 
 ## Data model
