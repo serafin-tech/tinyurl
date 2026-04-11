@@ -1,6 +1,6 @@
 # TinyURL Monorepo (MVP)
 
-This repository hosts a TinyURL-style application with a FastAPI backend, MongoDB persistence, a Svelte management UI, and an Nginx gateway that fronts the public redirect surface and the authenticated management surface.
+This repository hosts a TinyURL-style application with a FastAPI backend, MongoDB persistence, a Svelte management UI, and an Nginx gateway that fronts the public redirect surface, the authenticated management UI, and the authenticated API surface.
 
 ## Contents
 - `backend/` – FastAPI application source and its own README with feature details.
@@ -47,7 +47,7 @@ BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 Open:
 
 - `http://localhost:8000/<link-id>` for public redirects
-- `http://localhost:8000/api/` for the management UI (basic auth)
+- `http://localhost:8000/mgnt/` for the management UI (basic auth)
 - `http://localhost:8000/api/docs` for backend API docs (basic auth)
 
 Option B: Local Python

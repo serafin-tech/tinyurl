@@ -1,6 +1,6 @@
 # TinyURL Backend MVP
 
-FastAPI-based URL shortener backend using MongoDB. The backend now sits behind an Nginx gateway that serves the authenticated management UI under `/api/` and forwards public redirect traffic from the root path.
+FastAPI-based URL shortener backend using MongoDB. The backend now sits behind an Nginx gateway that serves the authenticated management UI under `/mgnt/`, exposes backend API/docs under `/api/`, and forwards public redirect traffic from the root path.
 
 - Tech: FastAPI, MongoDB, Motor, Pydantic v2
 - Deployment: Docker Compose with Nginx gateway + backend + MongoDB
@@ -17,7 +17,7 @@ BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 ```
 Open:
 
-- `http://localhost:8000/api/` for the management UI (basic auth)
+- `http://localhost:8000/mgnt/` for the management UI (basic auth)
 - `http://localhost:8000/api/docs` for API docs (basic auth)
 - `http://localhost:8000/<link-id>` for public redirects
 
@@ -31,7 +31,7 @@ pip install -e backend/[dev]
 
 uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 ```
-Open http://localhost:8000/api/docs.
+Open http://localhost:8000/api/docs for API docs, or use Docker Compose and visit http://localhost:8000/mgnt/ for the management UI.
 
 ## Configuration
 

@@ -3,7 +3,7 @@ import { MOCK_LINK_ID, MOCK_EDIT_TOKEN } from './fixtures'
 
 test.describe('Delete link tab', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/api/')
+    await page.goto('/mgnt/')
     await page.getByRole('button', { name: 'Delete' }).click()
   })
 

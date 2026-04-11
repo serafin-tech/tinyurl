@@ -3,7 +3,7 @@ import { MOCK_LINK_OUT, MOCK_LINK_ID, MOCK_EDIT_TOKEN, MOCK_TARGET_URL } from '.
 
 test.describe('Edit link tab', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/api/')
+    await page.goto('/mgnt/')
     await page.getByRole('button', { name: 'Edit' }).click()
   })
 

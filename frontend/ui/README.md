@@ -17,10 +17,10 @@ A minimal UI to interact with the TinyURL FastAPI backend.
 From the repository root:
 
 ```
-# dev server (http://localhost:5173), auto-installs deps inside container
+# dev server (UI at http://localhost:5173/mgnt/), auto-installs deps inside container
 ./run-ui-docker.sh dev
 
-# build & preview production bundle (http://localhost:5174)
+# build & preview production bundle (UI at http://localhost:5174/mgnt/)
 ./run-ui-docker.sh preview
 
 # build only (dist output in frontend/ui/dist)
@@ -46,7 +46,7 @@ cd frontend/ui
 npm install
 npm run dev
 ```
-Visit http://localhost:5173
+Visit http://localhost:5173/mgnt/
 
 Optionally create `.env`:
 ```
@@ -63,6 +63,7 @@ ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ## Notes
 - The UI reads `VITE_API_BASE` at build/runtime for API calls.
+- The production bundle is built to be served from `/mgnt/`.
 - Ensure your backend is reachable from the browser (network and CORS).
 - Redirect tester performs a manual fetch to `/{link_id}` and reports status & Location.
 

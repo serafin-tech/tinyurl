@@ -9,6 +9,7 @@ LINK_ID_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 RESERVED_LINK_IDS: Final[set[str]] = {
     "api",
     "admin",
+    "mgnt",
     "robots",
     "favicon",
     "health",

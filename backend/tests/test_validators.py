@@ -28,6 +28,8 @@ def test_validate_link_id_reserved():
     """Reserved IDs should be rejected."""
     with pytest.raises(ValidationError):
         validate_link_id("api")
+    with pytest.raises(ValidationError):
+        validate_link_id("mgnt")
 
 
 def test_validate_link_id_length_bounds():

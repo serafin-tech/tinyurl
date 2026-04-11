@@ -12,7 +12,7 @@ COPY gateway/include/ /etc/nginx/conf.d/include/
 COPY gateway/entrypoint.sh /docker-entrypoint.d/40-basic-auth.sh
 COPY gateway/static/robots.txt /usr/share/nginx/html/robots.txt
 COPY gateway/static/favicon.svg /usr/share/nginx/html/favicon.svg
-COPY --from=ui-build /app/dist /usr/share/nginx/html/api
+COPY --from=ui-build /app/dist /usr/share/nginx/html/mgnt
 RUN chmod +x /docker-entrypoint.d/40-basic-auth.sh
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
