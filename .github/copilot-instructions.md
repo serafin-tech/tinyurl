@@ -16,7 +16,6 @@ See application description in [docs/REQUIREMENTS.md](../docs/REQUIREMENTS.md).
 - When debugging, provide targeted diagnostic approaches rather than shotgun solutions.
 - Suggest comprehensive testing strategies rather than just example tests, including considerations for mocking, test organization, and coverage.
 
-
 ### Guidelines for VERSION_CONTROL
 
 #### GIT
@@ -119,6 +118,7 @@ See application description in [docs/REQUIREMENTS.md](../docs/REQUIREMENTS.md).
 - Use the aggregation framework for complex queries instead of multiple queries
 - Implement schema validation to ensure data consistency for tinyurl documents
 - Use indexes for frequently queried fields to improve performance
+
 ## DEVOPS
 
 ### Guidelines for CONTAINERIZATION

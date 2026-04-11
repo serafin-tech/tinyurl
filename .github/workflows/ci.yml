@@ -7,6 +7,21 @@ on:
     branches: ["main"]
 
 jobs:
+  markdown-lint:
+    name: Docs — Markdown lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run markdownlint-cli2
+        run: bash run-markdown-lint.sh
+
   backend-lint:
     name: Backend — Lint (ruff + mypy)
     runs-on: ubuntu-latest
