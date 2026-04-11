@@ -8,13 +8,13 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Adding a new link
 
-1. An authenticated management user can submit an original URL to shorten through the `/api` management surface protected by Nginx basic auth.
+1. An authenticated management user can submit an original URL to shorten through the `/mgnt` management UI, which calls the authenticated backend API under `/api`, with both surfaces protected by Nginx basic auth.
 2. If no `link-id` is provided, the system generates one as 6 hexadecimal characters `[0-9a-f]` (lowercase).
    - The system must ensure uniqueness atomically; on collision, retry generation (up to 5 attempts, then 500).
 3. The user may optionally provide a custom `link-id` (e.g., `my-link`) subject to:
    - Allowed charset: `^[A-Za-z0-9_-]{1,32}$`
    - Normalization: lowercase
-   - Not in reserved list: `api`, `admin`, `robots`, `favicon`, `health`, `metrics`, `static`, etc.
+   - Not in reserved list: `api`, `admin`, `mgnt`, `robots`, `favicon`, `health`, `metrics`, `static`, etc.
 4. The user can optionally choose the redirect status code (allowed: 301, 302, 307, 308). Default: 301.
 5. The system returns:
    - The shortened URL: `https://tinyurl.domain.com/<link-id>`
@@ -31,7 +31,7 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
    - The `target_url`
    - The `redirect_code`
    - Or the `link-id` (alias change)
-2. Updates require providing valid `edit_token` and access to the authenticated `/api` management surface.
+2. Updates require providing valid `edit_token` and access to the authenticated management surfaces (`/mgnt` UI and `/api` API).
 3. If changing the `link-id`, the new ID must be unused. By default, the old ID stops working and will return 410 Gone (see Deletion).
 
 ### Deleting an existing link
@@ -63,12 +63,12 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Security
 
-1. URL-management activity is available only under `/api` and is protected by Nginx-based HTTP basic authentication.
+1. URL-management activity is exposed only through the authenticated management UI under `/mgnt` and the authenticated backend API under `/api`, both protected by Nginx-based HTTP basic authentication.
 2. Each created link returns an edit token:
     - 24-character random string from `[A-Za-z0-9]` (≈143 bits entropy).
     - Store only a SHA-256 hash (optionally with a server-side pepper); never store plaintext.
     - Optionally rotate token on successful update.
-3. Nginx is the mandatory public entrypoint. The management UI and backend API are served under `/api` through Nginx; redirects are served from the root path.
+3. Nginx is the mandatory public entrypoint. The management UI is served under `/mgnt` and the backend API/docs under `/api` through Nginx; redirects are served from the root path.
 4. UI/API available only over HTTPS. Redirects may be served over HTTP and HTTPS (configurable).
 5. CSRF protection on form endpoints; CORS configured if exposing APIs to browsers.
 6. Basic-auth credentials must be supplied via deployment configuration and must not be committed to the repository.
@@ -132,7 +132,7 @@ Example JSON document representing one entry:
 ```mermaid
 graph TD
   U[User/Browser] --> NG[Nginx Gateway]
-  NG --> FE[Frontend / UI under /api]
+  NG --> FE[Frontend / UI under /mgnt]
   NG --> API[Backend API under /api]
   NG --> REDIR[Redirect surface at /<link-id>]
   API --> URL[URL Service write path]
@@ -144,8 +144,8 @@ graph TD
 
 ### Components
 
-- Nginx Gateway: Mandatory public entry point; basic auth for `/api`; serves edge-owned static files; proxies management and redirect traffic.
-- Frontend / UI: Authenticated management interface served under `/api`.
+- Nginx Gateway: Mandatory public entry point; basic auth for `/mgnt` and `/api`; serves edge-owned static files; proxies management and redirect traffic.
+- Frontend / UI: Authenticated management interface served under `/mgnt`.
 - Backend API: Validates and processes authenticated management traffic under `/api`.
 - URL Service: ID generation; writes/updates/deletes; cache invalidation.
 - Redirect Service: High-performance lookups for public root-path redirects.
