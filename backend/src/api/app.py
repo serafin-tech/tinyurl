@@ -188,14 +188,16 @@ async def create_link(
     redirect_code = payload.redirect_code or 301
     validate_redirect_code(redirect_code)
 
+    # Create edit token and hash
+    edit_token = generate_edit_token()
+    edit_token_hash = hash_token(edit_token, pepper=pepper)
+
     if payload.link_id:
         link_id = normalize_link_id(payload.link_id)
         validate_link_id(link_id)
         if await repo.exists(link_id):
             raise HTTPException(
                 status_code=409, detail="link_id already taken")
-        edit_token = generate_edit_token()
-        edit_token_hash = hash_token(edit_token, pepper=pepper)
         try:
             link = await repo.create(
                 link_id=link_id,
@@ -207,8 +209,6 @@ async def create_link(
             raise HTTPException(
                 status_code=409, detail="link_id already taken") from exc
     else:
-        edit_token = generate_edit_token()
-        edit_token_hash = hash_token(edit_token, pepper=pepper)
         for _ in range(LINK_ID_GENERATION_MAX_ATTEMPTS):
             try:
                 link = await repo.create(
