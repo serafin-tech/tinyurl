@@ -79,6 +79,38 @@ uvicorn src.api.app:app --app-dir backend --reload
 - Format check: `ruff format --check backend/src`
 - Type check: `mypy backend/src`
 
+## Dependency updates
+
+This repository is configured for Renovate via `renovate.json`.
+
+- Supported update surfaces: GitHub Actions, Dockerfiles, Compose images, backend Python dependencies, and frontend npm dependencies.
+- Non-major updates are grouped by ecosystem to reduce PR noise, while major updates stay separate and require explicit dashboard approval.
+- Lock file maintenance is enabled weekly.
+
+To activate updates, install and enable the Renovate GitHub App for this repository or run Renovate against it with the checked-in config.
+
+Local dry-run usage:
+
+```bash
+./run-renovate-local.sh
+```
+
+Notes:
+
+- The script runs Renovate in Docker, so no local Node.js or Renovate installation is required.
+- It uses Renovate's experimental `local` platform and defaults to dry-run lookup mode.
+- Set `RENOVATE_GITHUB_COM_TOKEN` if you want better GitHub changelog fetching and fewer rate-limit issues.
+
+## Branching strategy
+
+The repository uses a protected-`main` workflow with short-lived topic branches. Create work from `main` and open pull requests back into `main`.
+
+- Allowed branch prefixes: `feature/`, `fix/`, `bugfix/`, `security/`, `hotfix/`, `docs/`, `chore/`, `refactor/`, `test/`, and `release/`
+- Use lowercase kebab-case after the prefix, for example `feature/custom-link-aliases`
+- Automation branches from Renovate and Dependabot are allowed
+
+The full policy lives in `docs/branch-naming-convention.md`, and `.github/workflows/branch-policy.yml` enforces branch names in GitHub Actions. For GitHub branch protection, require both `CI` and `Branch policy` on `main` and disallow direct pushes.
+
 (Optional) Pre-commit hooks:
 ```bash
 pip install pre-commit
