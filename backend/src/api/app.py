@@ -26,10 +26,16 @@ from src.api.schemas import (
     LinkOut,
     UpdateLinkRequest,
 )
-from src.domain.errors import ConflictError, NotFoundError, ValidationError
+from src.domain.errors import (
+    ConflictError,
+    GenerationError,
+    NotFoundError,
+    ValidationError,
+)
 from src.domain.id_token import (
+    LINK_ID_GENERATION_MAX_ATTEMPTS,
     generate_edit_token,
-    generate_unique_link_id,
+    generate_link_id_candidate,
     hash_token,
     verify_token,
 )
@@ -150,6 +156,14 @@ async def handle_validation_error(
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
+@app.exception_handler(GenerationError)
+async def handle_generation_error(
+    _req: Request, exc: GenerationError
+) -> JSONResponse:
+    """Map exhausted generated-ID retries to HTTP 500 JSON response."""
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
 @app.post(
     "/api/links",
     response_model=CreateLinkResponse,
@@ -174,31 +188,40 @@ async def create_link(
     redirect_code = payload.redirect_code or 301
     validate_redirect_code(redirect_code)
 
+    # Create edit token and hash
+    edit_token = generate_edit_token()
+    edit_token_hash = hash_token(edit_token, pepper=pepper)
+
     if payload.link_id:
         link_id = normalize_link_id(payload.link_id)
         validate_link_id(link_id)
         if await repo.exists(link_id):
             raise HTTPException(
                 status_code=409, detail="link_id already taken")
+        try:
+            link = await repo.create(
+                link_id=link_id,
+                target_url=target_url,
+                redirect_code=redirect_code,
+                edit_token_hash=edit_token_hash,
+            )
+        except ConflictError as exc:
+            raise HTTPException(
+                status_code=409, detail="link_id already taken") from exc
     else:
-        # Generate a unique id using the repository exists() check
-        link_id = await generate_unique_link_id(repo.exists)
-
-    # Create edit token and hash
-    edit_token = generate_edit_token()
-    edit_token_hash = hash_token(edit_token, pepper=pepper)
-
-    try:
-        link = await repo.create(
-            link_id=link_id,
-            target_url=target_url,
-            redirect_code=redirect_code,
-            edit_token_hash=edit_token_hash,
-        )
-    except ConflictError as exc:
-        # Rare race when id was taken between exists() and create()
-        raise HTTPException(
-            status_code=409, detail="link_id already taken") from exc
+        for _ in range(LINK_ID_GENERATION_MAX_ATTEMPTS):
+            try:
+                link = await repo.create(
+                    link_id=generate_link_id_candidate(),
+                    target_url=target_url,
+                    redirect_code=redirect_code,
+                    edit_token_hash=edit_token_hash,
+                )
+                break
+            except ConflictError:
+                continue
+        else:
+            raise GenerationError("failed to generate unique link id")
 
     short_url = f"{base_url.rstrip('/')}/{link.link_id}"
     return CreateLinkResponse(
