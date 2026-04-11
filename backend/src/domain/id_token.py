@@ -1,46 +1,15 @@
-"""Services for link-id generation and edit token management.
-
-Contracts:
-- generate_unique_link_id(exists, max_attempts=5) -> str (async)
-  - exists(id: str) -> Awaitable[bool] checks persistence for collisions
-- generate_edit_token(length=24) -> str (A-Za-z0-9)
-- hash_token(token: str, pepper: str | None = None) -> str (hex sha256)
-- verify_token(token: str, token_hash: str, pepper: str | None = None) -> bool
-"""
+"""Services for generated link-id candidates and edit token management."""
 
 import hashlib
 import secrets
 import string
-from collections.abc import Awaitable, Callable
 
-from .errors import GenerationError
+LINK_ID_GENERATION_MAX_ATTEMPTS = 5
 
 
-def _random_hex_id() -> str:
-    # 6 hex chars => 24 bits; requirement: lowercase hex
+def generate_link_id_candidate() -> str:
+    """Return a random 6-character lowercase hexadecimal candidate ID."""
     return secrets.token_hex(3)
-
-
-async def generate_unique_link_id(
-    exists: Callable[[str], Awaitable[bool]], max_attempts: int = 5
-) -> str:
-    """Generate a unique 6-char hex link id with collision retries.
-
-    Args:
-        exists: An async callable that returns True if the given id already exists.
-        max_attempts: Maximum attempts before raising GenerationError.
-
-    Returns:
-        str: A unique 6-character lowercase hexadecimal string.
-
-    Raises:
-        GenerationError: When a unique id cannot be generated within max_attempts.
-    """
-    for _ in range(max_attempts):
-        candidate = _random_hex_id()
-        if not await exists(candidate):
-            return candidate
-    raise GenerationError("failed to generate unique link id")
 
 
 _ALPHANUM = string.ascii_letters + string.digits

@@ -59,7 +59,7 @@ OpenAPI docs:
 - Through Compose gateway: `http://localhost:8000/api/docs`
 
 - GET `/api/health` → `{ "status": "ok" }`
-- POST `/api/links` – create a short link
+- POST `/api/links` – create a short link; auto-generated IDs retry collisions up to 5 times before failing with 500
 - PATCH `/api/links/{link_id}` – update (requires `X-Edit-Token`)
 - DELETE `/api/links/{link_id}` – delete (requires `X-Edit-Token`)
 - GET/HEAD `/{link_id}` – backend redirect endpoint (when exposed through Nginx, public root traffic is limited to GET)

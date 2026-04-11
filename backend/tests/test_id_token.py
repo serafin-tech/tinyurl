@@ -1,67 +1,40 @@
 """Unit tests for ID and token services."""
 
-import itertools
-
 import pytest
 
 from src.domain import id_token as mod
-from src.domain.errors import GenerationError
 from src.domain.id_token import (
+    LINK_ID_GENERATION_MAX_ATTEMPTS,
     generate_edit_token,
-    generate_unique_link_id,
+    generate_link_id_candidate,
     hash_token,
     verify_token,
 )
 
 
-@pytest.mark.asyncio
-async def test_generate_unique_link_id_no_collision() -> None:
-    """Simple path: generates a 6-char lowercase hex id with no collision."""
-    taken: set[str] = set()
-
-    async def exists(link_id: str) -> bool:
-        return link_id in taken
-
-    new_id = await generate_unique_link_id(exists)
+def test_generate_link_id_candidate_format() -> None:
+    """Generated candidates use the required 6-char lowercase hexadecimal format."""
+    new_id = generate_link_id_candidate()
     assert isinstance(new_id, str) and len(new_id) == 6
     assert all(ch in "0123456789abcdef" for ch in new_id)
 
 
-@pytest.mark.asyncio
-async def test_generate_unique_link_id_with_collision_then_success(
+def test_generate_link_id_candidate_uses_three_random_bytes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """First candidate collides, second is unique."""
-    seq = itertools.cycle(["deadbe", "b16b00"])
+    """Candidate generation should request exactly 3 random bytes (6 hex chars)."""
 
     def fake_token_hex(n: int) -> str:
-        return next(seq)[: 2 * n]
+        assert n == 3
+        return "abcdef"
 
     monkeypatch.setattr(mod.secrets, "token_hex", fake_token_hex)
-
-    taken = {"deadbe"}
-
-    async def exists(link_id: str) -> bool:
-        return link_id in taken
-
-    new_id = await generate_unique_link_id(exists)
-    assert new_id == "b16b00"
+    assert generate_link_id_candidate() == "abcdef"
 
 
-@pytest.mark.asyncio
-async def test_generate_unique_link_id_exhaustion(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Exhaust retries and raise GenerationError on repeated collisions."""
-
-    def always_collision(*_args: object, **_kwargs: object) -> str:
-        return "ffffff"
-
-    monkeypatch.setattr(mod.secrets, "token_hex", always_collision)
-
-    async def always_exists(link_id: str) -> bool:
-        return True
-
-    with pytest.raises(GenerationError):
-        await generate_unique_link_id(always_exists, max_attempts=3)
+def test_link_id_generation_retry_budget_matches_requirement() -> None:
+    """Auto-generated IDs should retry collisions up to five times."""
+    assert LINK_ID_GENERATION_MAX_ATTEMPTS == 5
 
 
 def test_edit_token_hash_and_verify() -> None:

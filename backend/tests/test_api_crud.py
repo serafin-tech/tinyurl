@@ -4,6 +4,7 @@ import httpx
 import pytest
 import pytest_asyncio
 
+import src.api.app as api_app_module
 from src.api.app import app
 
 
@@ -103,6 +104,63 @@ async def test_conflict_on_custom_id(client: httpx.AsyncClient) -> None:
     # Second with same id should 409
     r2 = await client.post("/api/links", json=payload)
     assert r2.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_generated_id_insert_conflict_retries_success(
+    client: httpx.AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Generated IDs should retry duplicate-key insert conflicts and still succeed."""
+    seed = await client.post(
+        "/api/links",
+        json={"target_url": "https://example.com/taken", "link_id": "deadbe"},
+    )
+    assert seed.status_code == 200
+
+    candidates = iter(["deadbe", "b16b00"])
+    monkeypatch.setattr(
+        api_app_module,
+        "generate_link_id_candidate",
+        lambda: next(candidates),
+    )
+
+    created = await client.post(
+        "/api/links",
+        json={"target_url": "https://example.com/generated"},
+    )
+    assert created.status_code == 200, created.text
+    assert created.json()["link_id"] == "b16b00"
+
+
+@pytest.mark.asyncio
+async def test_generated_id_retry_exhaustion_returns_500(
+    client: httpx.AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Generated IDs should return 500 after exhausting the retry budget."""
+    seed = await client.post(
+        "/api/links",
+        json={"target_url": "https://example.com/taken", "link_id": "ffffff"},
+    )
+    assert seed.status_code == 200
+
+    attempts = 0
+
+    def always_conflict() -> str:
+        nonlocal attempts
+        attempts += 1
+        return "ffffff"
+
+    monkeypatch.setattr(api_app_module, "generate_link_id_candidate", always_conflict)
+
+    failed = await client.post(
+        "/api/links",
+        json={"target_url": "https://example.com/exhausted"},
+    )
+    assert failed.status_code == 500
+    assert failed.json()["detail"] == "failed to generate unique link id"
+    assert attempts == api_app_module.LINK_ID_GENERATION_MAX_ATTEMPTS
 
 
 @pytest.mark.asyncio
