@@ -66,6 +66,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - t
 app = FastAPI(
     title="TinyURL Backend MVP",
     version="0.1.0",
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    swagger_ui_oauth2_redirect_url="/api/docs/oauth2-redirect",
     description=(
         "A minimal URL shortener API. Create short links, update or delete them "
         "with an edit token, and serve high-performance redirects with correct "

@@ -1,0 +1,83 @@
+server {
+    listen 80;
+    server_name _;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+
+    location = /robots.txt {
+        root /usr/share/nginx/html;
+        try_files /robots.txt =404;
+    }
+
+    location = /favicon.ico {
+        access_log off;
+        default_type image/svg+xml;
+        alias /usr/share/nginx/html/favicon.svg;
+    }
+
+    location = /api {
+        return 301 /api/;
+    }
+
+    location = /api/openapi.json {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://backend:8000/api/openapi.json;
+    }
+
+    location = /api/docs {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://backend:8000/api/docs;
+    }
+
+    location = /api/docs/oauth2-redirect {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://backend:8000/api/docs/oauth2-redirect;
+    }
+
+    location = /api/health {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://backend:8000/api/health;
+    }
+
+    location ^~ /api/links {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://backend:8000;
+    }
+
+    location ^~ /api/assets/ {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        root /usr/share/nginx/html;
+        try_files $uri =404;
+    }
+
+    location = /api/ {
+        auth_basic "TinyURL management";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        root /usr/share/nginx/html;
+        try_files /api/index.html =404;
+    }
+
+    location / {
+        if ($request_method != GET) {
+            return 405;
+        }
+
+        proxy_pass http://backend:8000;
+    }
+}

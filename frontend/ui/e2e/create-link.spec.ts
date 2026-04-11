@@ -3,7 +3,7 @@ import { MOCK_CREATE_RESPONSE, MOCK_TARGET_URL, MOCK_LINK_ID, MOCK_SHORT_URL, MO
 
 test.describe('Create link tab', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/api/')
   })
 
   test('has required Target URL field', async ({ page }) => {

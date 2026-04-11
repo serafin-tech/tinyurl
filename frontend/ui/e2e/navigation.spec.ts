@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Tab navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/api/')
   })
 
   test('shows Create tab active by default', async ({ page }) => {
