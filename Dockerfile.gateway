@@ -8,6 +8,7 @@ RUN npm run build
 FROM nginx:1.27-alpine AS gateway
 RUN apk add --no-cache apache2-utils
 COPY gateway/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY gateway/include/block-exploits.conf /etc/nginx/conf.d/include/block-exploits.conf
 COPY gateway/entrypoint.sh /docker-entrypoint.d/40-basic-auth.sh
 COPY gateway/static/robots.txt /usr/share/nginx/html/robots.txt
 COPY gateway/static/favicon.svg /usr/share/nginx/html/favicon.svg

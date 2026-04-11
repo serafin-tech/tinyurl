@@ -74,6 +74,22 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 6. Basic-auth credentials must be supplied via deployment configuration and must not be committed to the repository.
 7. Abuse controls: domain blocklist and optional safe-browsing checks.
 8. Input validation and output encoding in UI to prevent XSS.
+9. Gateway hardening:
+    - Nginx must reject clearly malicious exploit probes at the edge, including obvious injection payloads, path traversal probes, access to sensitive runtime paths, and known low-value abusive user agents.
+    - Nginx must deny access to hidden files and sensitive metadata artifacts such as dotfiles, backup files, and misplaced configuration files in the web root.
+    - Nginx must disable unnecessary information disclosure such as server version tokens.
+    - Nginx must apply conservative request handling defaults suitable for a small form-based application, including request body sizing and client timeout limits.
+    - Nginx hardening rules must be stored in version control and applied consistently across environments.
+10. Security headers:
+    - The gateway must send baseline security headers for UI and static responses, including at least protections against MIME sniffing, clickjacking, and overly broad referrer leakage.
+    - A restrictive Content Security Policy and Permissions Policy should be configured for the management UI, subject to application compatibility.
+11. Access control and verification:
+    - Non-public routes must follow deny-by-default access control principles.
+    - Security-sensitive gateway behavior must be covered by automated validation or deployment smoke checks.
+12. Error handling and exposure:
+    - Unauthenticated clients must not receive stack traces, infrastructure metadata, or other unnecessary implementation details in error responses.
+13. Configuration integrity:
+    - Gateway and deployment security configuration changes must go through code review and use trusted, version-controlled build assets.
 
 ### SEO and redirects
 
@@ -119,8 +135,8 @@ graph TD
   NG --> FE[Frontend / UI under /api]
   NG --> API[Backend API under /api]
   NG --> REDIR[Redirect surface at /<link-id>]
-  API --> URL[URL Service (write path)]
-  REDIR --> READ[Redirect Service (read path)]
+  API --> URL[URL Service write path]
+  REDIR --> READ[Redirect Service read path]
   URL --> DB[(Persistent DB)]
   READ --> CACHE[(In-memory Cache)]
   CACHE --> DB
