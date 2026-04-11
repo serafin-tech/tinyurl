@@ -8,7 +8,7 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Adding a new link
 
-1. The user can submit an original URL to shorten.
+1. An authenticated management user can submit an original URL to shorten through the `/api` management surface protected by Nginx basic auth.
 2. If no `link-id` is provided, the system generates one as 6 hexadecimal characters `[0-9a-f]` (lowercase).
    - The system must ensure uniqueness atomically; on collision, retry generation (up to 5 attempts, then 500).
 3. The user may optionally provide a custom `link-id` (e.g., `my-link`) subject to:
@@ -31,22 +31,22 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
    - The `target_url`
    - The `redirect_code`
    - Or the `link-id` (alias change)
-2. Updates require providing valid `edit_token`.
+2. Updates require providing valid `edit_token` and access to the authenticated `/api` management surface.
 3. If changing the `link-id`, the new ID must be unused. By default, the old ID stops working and will return 410 Gone (see Deletion).
 
 ### Deleting an existing link
 
-1. The user can request deletion of a previously created link using valid `edit_token`.
+1. An authenticated management user can request deletion of a previously created link using a valid `edit_token`.
 2. The system marks the entry as deleted (`active=false`, `target_url` may be nulled). Redirect service must return 410 Gone for that `link-id`.
 
 ### Redirection
 
-1. Visiting `https://tinyurl.domain.com/<link-id>` returns a redirect to the original URL with the configured code (301, 302, 307, or 308).
+1. Visiting `https://tinyurl.domain.com/<link-id>` with `GET` returns a redirect to the original URL with the configured code (301, 302, 307, or 308).
 2. For a deleted `link-id`, return 410 Gone. For non-existent IDs, return 404.
-3. Support GET and HEAD methods.
+3. The public root redirect surface accepts only `GET` requests. URL-management activity must not be exposed on the root path.
 4. Caching:
-   - 301/308 may include long max-age (configurable).
-   - 302/307 should be non-cacheable by default.
+    - 301/308 may include long max-age (configurable).
+    - 302/307 should be non-cacheable by default.
 
 ## Non-functional requirements
 
@@ -63,15 +63,17 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
 
 ### Security
 
-1. Link creation is public; no rate limiting required.
+1. URL-management activity is available only under `/api` and is protected by Nginx-based HTTP basic authentication.
 2. Each created link returns an edit token:
-   - 24-character random string from `[A-Za-z0-9]` (≈143 bits entropy).
-   - Store only a SHA-256 hash (optionally with a server-side pepper); never store plaintext.
-   - Optionally rotate token on successful update.
-3. UI/API available only over HTTPS. Redirects may be served over HTTP and HTTPS (configurable).
-4. CSRF protection on form endpoints; CORS configured if exposing APIs to browsers.
-5. Abuse controls: domain blocklist and optional safe-browsing checks.
-6. Input validation and output encoding in UI to prevent XSS.
+    - 24-character random string from `[A-Za-z0-9]` (≈143 bits entropy).
+    - Store only a SHA-256 hash (optionally with a server-side pepper); never store plaintext.
+    - Optionally rotate token on successful update.
+3. Nginx is the mandatory public entrypoint. The management UI and backend API are served under `/api` through Nginx; redirects are served from the root path.
+4. UI/API available only over HTTPS. Redirects may be served over HTTP and HTTPS (configurable).
+5. CSRF protection on form endpoints; CORS configured if exposing APIs to browsers.
+6. Basic-auth credentials must be supplied via deployment configuration and must not be committed to the repository.
+7. Abuse controls: domain blocklist and optional safe-browsing checks.
+8. Input validation and output encoding in UI to prevent XSS.
 
 ### SEO and redirects
 
@@ -80,7 +82,8 @@ Here is a set of functional and non-functional requirements for a TinyURL-type a
    - 302 Found: temporary; not cacheable by default; method may change on some clients.
    - 307 Temporary Redirect: temporary; method preserved.
    - 308 Permanent Redirect: permanent; method preserved; cacheable by default.
-2. Serve a static `robots.txt` (configurable).
+2. Serve a static `robots.txt` (configurable) from Nginx.
+3. Serve other edge-owned static assets such as `favicon.ico` from Nginx rather than the application backend.
 
 ### Error handling
 
@@ -112,21 +115,24 @@ Example JSON document representing one entry:
 
 ```mermaid
 graph TD
-  U[User/Browser] --> FE[Frontend / UI]
-  FE --> API[API Gateway / Backend API]
+  U[User/Browser] --> NG[Nginx Gateway]
+  NG --> FE[Frontend / UI under /api]
+  NG --> API[Backend API under /api]
+  NG --> REDIR[Redirect surface at /<link-id>]
   API --> URL[URL Service (write path)]
-  API --> REDIR[Redirect Service (read path)]
+  REDIR --> READ[Redirect Service (read path)]
   URL --> DB[(Persistent DB)]
-  REDIR --> CACHE[(In-memory Cache)]
+  READ --> CACHE[(In-memory Cache)]
   CACHE --> DB
 ```
 
 ### Components
 
-- API Gateway / Backend API: Entry point; validation; routes write/read traffic.
-- Frontend / UI: Forms to add, edit, and browse links.
+- Nginx Gateway: Mandatory public entry point; basic auth for `/api`; serves edge-owned static files; proxies management and redirect traffic.
+- Frontend / UI: Authenticated management interface served under `/api`.
+- Backend API: Validates and processes authenticated management traffic under `/api`.
 - URL Service: ID generation; writes/updates/deletes; cache invalidation.
-- Redirect Service: High-performance lookups; serves redirects from cache.
+- Redirect Service: High-performance lookups for public root-path redirects.
 - Cache: In-memory/Redis for hot lookups.
 - DB: Persistent store (MongoDB).
 
@@ -134,6 +140,6 @@ graph TD
 
 - Frontend: Svelte, Vue, or Preact
 - API/Backend: Python (FastAPI)
-- API Gateway: Nginx
+- API Gateway: Nginx (required public entrypoint)
 - Cache: Redis
 - Database: MongoDB

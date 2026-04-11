@@ -1,6 +1,6 @@
 # TinyURL Monorepo (MVP)
 
-This repository hosts the TinyURL MVP implementation. Current scope: a backend service (FastAPI + SQLite) with a minimal redirect and CRUD API. Future stages will add frontend and expanded features.
+This repository hosts a TinyURL-style application with a FastAPI backend, MongoDB persistence, a Svelte management UI, and an Nginx gateway that fronts the public redirect surface and the authenticated management surface.
 
 ## Contents
 - `backend/` – FastAPI application source and its own README with feature details.
@@ -38,14 +38,17 @@ python -m pip install --upgrade pip
 pip install -e backend/[dev]
 ```
 
-## Running the Backend
+## Running the Stack
 
 Option A: Docker Compose
 ```bash
-cd backend
-docker compose up --build
+BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 ```
-Open http://localhost:8000/docs
+Open:
+
+- `http://localhost:8000/<link-id>` for public redirects
+- `http://localhost:8000/api/` for the management UI (basic auth)
+- `http://localhost:8000/api/docs` for backend API docs (basic auth)
 
 Option B: Local Python
 ```bash
@@ -54,25 +57,24 @@ uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 
 ## Environment Variables
 
-- SQLITE_DB_PATH (default: /data/links.db)
 - BASE_URL (default: http://localhost:8000)
+- MONGODB_URI (default: mongodb://localhost:27017)
+- MONGODB_DB (default: tinyurl)
 - TOKEN_PEPPER (default: devpepper)
-- RATE_LIMIT_CREATE / RATE_LIMIT_UPDATE / RATE_LIMIT_DELETE (default: 100)
+- BASIC_AUTH_USER / BASIC_AUTH_PASSWORD (used by the Nginx gateway in Compose)
 
 Local example:
 ```bash
-export SQLITE_DB_PATH=./backend/data/links.db
 export BASE_URL=http://localhost:8000
+export MONGODB_URI=mongodb://localhost:27017
+export MONGODB_DB=tinyurl
 export TOKEN_PEPPER=devpepper
-export RATE_LIMIT_CREATE=100
-export RATE_LIMIT_UPDATE=100
-export RATE_LIMIT_DELETE=100
 uvicorn src.api.app:app --app-dir backend --reload
 ```
 
 ## Testing & Tooling
 
-- Run tests: `pytest -q` (once tests are added)
+- Run backend tests: `bash run-tests.sh`
 - Lint: `ruff check backend/src`
 - Format check: `ruff format --check backend/src`
 - Type check: `mypy backend/src`
@@ -95,5 +97,5 @@ pre-commit run --all-files
 7. Tests (unit & integration)
 8. Observability basics (logging, request IDs)
 9. Frontend stub (optional)
-10. Static assets / robots.txt
+10. Redis-backed redirect cache
 11. Abuse controls (domain blocklist)

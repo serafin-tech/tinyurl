@@ -3,7 +3,7 @@ import { MOCK_LINK_ID, MOCK_LINK_OUT, MOCK_TARGET_URL } from './fixtures'
 
 test.describe('Test redirect tab', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/api/')
     await page.getByRole('button', { name: 'Test redirect' }).click()
   })
 

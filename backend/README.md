@@ -1,9 +1,9 @@
 # TinyURL Backend MVP
 
-FastAPI-based minimal URL shortener backend using SQLite. This MVP supports creating, updating, deleting, and resolving short links as described in the project requirements (no Redis, no Kubernetes).
+FastAPI-based URL shortener backend using MongoDB. The backend now sits behind an Nginx gateway that serves the authenticated management UI under `/api/` and forwards public redirect traffic from the root path.
 
-- Tech: FastAPI, SQLite, SQLAlchemy, Pydantic v2
-- Deployment: Docker Compose (single service)
+- Tech: FastAPI, MongoDB, Motor, Pydantic v2
+- Deployment: Docker Compose with Nginx gateway + backend + MongoDB
 - Security: Edit token (24-char), hashed (sha256 + optional pepper)
 - Redirects: 301/302/307/308; 410 for deleted; 404 for not found
 
@@ -13,11 +13,13 @@ You can run the backend via Docker Compose (recommended) or locally with Python.
 
 ### Option A: Docker Compose
 ```bash
-docker compose up --build
+BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 ```
-Open http://localhost:8000/docs to view the API docs.
+Open:
 
-The SQLite database file is stored in a Docker volume at `/data/links.db`.
+- `http://localhost:8000/api/` for the management UI (basic auth)
+- `http://localhost:8000/api/docs` for API docs (basic auth)
+- `http://localhost:8000/<link-id>` for public redirects
 
 ### Option B: Local Python
 From the repository root:
@@ -29,37 +31,38 @@ pip install -e backend/[dev]
 
 uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 ```
-Open http://localhost:8000/docs.
+Open http://localhost:8000/api/docs.
 
 ## Configuration
 
 Environment variables (Docker Compose provides defaults):
 
-- SQLITE_DB_PATH: Path to SQLite file (default: /data/links.db)
+- MONGODB_URI: MongoDB connection string (default: mongodb://localhost:27017)
+- MONGODB_DB: Database name (default: tinyurl)
 - BASE_URL: Base URL used when returning shortened links (default: http://localhost:8000)
 - TOKEN_PEPPER: Pepper used before hashing edit tokens (default: devpepper)
-- RATE_LIMIT_CREATE / RATE_LIMIT_UPDATE / RATE_LIMIT_DELETE: per-IP per minute (default: 100)
 
 Local example:
 ```bash
-export SQLITE_DB_PATH=./backend/data/links.db
+export MONGODB_URI=mongodb://localhost:27017
+export MONGODB_DB=tinyurl
 export BASE_URL=http://localhost:8000
 export TOKEN_PEPPER=devpepper
-export RATE_LIMIT_CREATE=100
-export RATE_LIMIT_UPDATE=100
-export RATE_LIMIT_DELETE=100
 uvicorn src.api.app:app --app-dir backend --reload
 ```
 
 ## API Overview
 
-OpenAPI docs: http://localhost:8000/docs
+OpenAPI docs:
+
+- Local backend directly: `http://localhost:8000/api/docs`
+- Through Compose gateway: `http://localhost:8000/api/docs`
 
 - GET `/api/health` → `{ "status": "ok" }`
 - POST `/api/links` – create a short link
 - PATCH `/api/links/{link_id}` – update (requires `X-Edit-Token`)
 - DELETE `/api/links/{link_id}` – delete (requires `X-Edit-Token`)
-- GET/HEAD `/{link_id}` – redirect (404 if missing, 410 if deleted)
+- GET/HEAD `/{link_id}` – backend redirect endpoint (when exposed through Nginx, public root traffic is limited to GET)
 
 Example create request:
 ```bash
@@ -78,5 +81,5 @@ curl -sS -X POST http://localhost:8000/api/links \
 ## Troubleshooting
 
 - VS Code unresolved imports → ensure interpreter is `backend/.venv/bin/python`
-- Port 8000 busy → use `--port 8001`
-- SQLite write errors → set writable `SQLITE_DB_PATH`
+- Port 8000 busy → change the published gateway port in `docker-compose.yaml`
+- MongoDB connection errors → verify `MONGODB_URI` and that the `mongodb` service is healthy
