@@ -1,0 +1,43 @@
+name: Branch policy
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches-ignore: ["main"]
+    tags-ignore: ["**"]
+
+jobs:
+  branch-name:
+    name: Validate branch name
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check branch naming convention
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          echo "Validating branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" =~ ^(feature|fix|bugfix|security|hotfix|docs|chore|refactor|test|release)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            exit 0
+          fi
+
+          if [[ "$BRANCH_NAME" =~ ^(renovate|dependabot)/.+$ ]]; then
+            exit 0
+          fi
+
+          echo "Invalid branch name: $BRANCH_NAME"
+          echo "Use one of:"
+          echo "  feature/<kebab-case>"
+          echo "  fix/<kebab-case>"
+          echo "  bugfix/<kebab-case>"
+          echo "  security/<kebab-case>"
+          echo "  hotfix/<kebab-case>"
+          echo "  docs/<kebab-case>"
+          echo "  chore/<kebab-case>"
+          echo "  refactor/<kebab-case>"
+          echo "  test/<kebab-case>"
+          echo "  release/<kebab-case>"
+          echo "Automation branches renovate/* and dependabot/* are also allowed."
+          exit 1

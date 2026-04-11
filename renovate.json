@@ -1,0 +1,68 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "dependencyDashboard": true,
+  "timezone": "UTC",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 4am on monday"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Group non-major Python backend updates from pyproject-managed dependencies.",
+      "matchManagers": [
+        "pep621",
+        "pip_requirements",
+        "pip_setup"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "backend python dependencies"
+    },
+    {
+      "description": "Group non-major frontend npm updates.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "frontend npm dependencies"
+    },
+    {
+      "description": "Group non-major CI and container updates.",
+      "matchManagers": [
+        "github-actions",
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "ci and container dependencies"
+    },
+    {
+      "description": "Keep major updates separate for easier review.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}
