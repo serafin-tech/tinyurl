@@ -7,6 +7,7 @@ This repository uses a `main`-centric workflow with short-lived topic branches.
 - `main` is the only long-lived branch.
 - `main` must stay deployable.
 - Changes land in `main` through pull requests after CI passes.
+
 ## Topic branch naming
 
 Create branches from `main` using one of these prefixes:

@@ -12,9 +12,11 @@ FastAPI-based URL shortener backend using MongoDB. The backend now sits behind a
 You can run the backend via Docker Compose (recommended) or locally with Python.
 
 ### Option A: Docker Compose
+
 ```bash
 BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 ```
+
 Open:
 
 - `http://localhost:8000/mgnt/` for the management UI (basic auth)
@@ -22,7 +24,9 @@ Open:
 - `http://localhost:8000/<link-id>` for public redirects
 
 ### Option B: Local Python
+
 From the repository root:
+
 ```bash
 python -m venv backend/.venv
 . backend/.venv/bin/activate
@@ -31,6 +35,7 @@ pip install -e backend/[dev]
 
 uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 ```
+
 Open http://localhost:8000/api/docs for API docs, or use Docker Compose and visit http://localhost:8000/mgnt/ for the management UI.
 
 ## Configuration
@@ -43,6 +48,7 @@ Environment variables (Docker Compose provides defaults):
 - TOKEN_PEPPER: Pepper used before hashing edit tokens (default: devpepper)
 
 Local example:
+
 ```bash
 export MONGODB_URI=mongodb://localhost:27017
 export MONGODB_DB=tinyurl
@@ -65,6 +71,7 @@ OpenAPI docs:
 - GET/HEAD `/{link_id}` – backend redirect endpoint (when exposed through Nginx, public root traffic is limited to GET)
 
 Example create request:
+
 ```bash
 curl -sS -X POST http://localhost:8000/api/links \
   -H 'Content-Type: application/json' \

@@ -3,10 +3,12 @@
 This repository hosts a TinyURL-style application with a FastAPI backend, MongoDB persistence, a Svelte management UI, and an Nginx gateway that fronts the public redirect surface, the authenticated management UI, and the authenticated API surface.
 
 ## Contents
+
 - `backend/` – FastAPI application source and its own README with feature details.
 - `docs/` – Requirements and design notes.
 
 ## Prerequisites
+
 - Python 3.11+
 - Docker (optional but recommended for Compose)
 - Git
@@ -14,26 +16,32 @@ This repository hosts a TinyURL-style application with a FastAPI backend, MongoD
 ## Environment Setup (Local Python)
 
 1) Create a virtual environment
+
 ```bash
 python -m venv backend/.venv
 ```
 
-2) Activate the environment
+1) Activate the environment
 Linux/macOS:
+
 ```bash
 . backend/.venv/bin/activate
 ```
+
 Windows (PowerShell):
+
 ```powershell
 backend\.venv\Scripts\Activate.ps1
 ```
 
-3) Upgrade pip (recommended)
+1) Upgrade pip (recommended)
+
 ```bash
 python -m pip install --upgrade pip
 ```
 
-4) Install dependencies (editable + dev)
+1) Install dependencies (editable + dev)
+
 ```bash
 pip install -e backend/[dev]
 ```
@@ -41,9 +49,11 @@ pip install -e backend/[dev]
 ## Running the Stack
 
 Option A: Docker Compose
+
 ```bash
 BASIC_AUTH_USER=admin BASIC_AUTH_PASSWORD=change-me docker compose up --build
 ```
+
 Open:
 
 - `http://localhost:8000/<link-id>` for public redirects
@@ -51,6 +61,7 @@ Open:
 - `http://localhost:8000/api/docs` for backend API docs (basic auth)
 
 Option B: Local Python
+
 ```bash
 uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 ```
@@ -64,6 +75,7 @@ uvicorn src.api.app:app --app-dir backend --reload --host 0.0.0.0 --port 8000
 - BASIC_AUTH_USER / BASIC_AUTH_PASSWORD (used by the Nginx gateway in Compose)
 
 Local example:
+
 ```bash
 export BASE_URL=http://localhost:8000
 export MONGODB_URI=mongodb://localhost:27017
@@ -78,6 +90,7 @@ uvicorn src.api.app:app --app-dir backend --reload
 - Lint: `ruff check backend/src`
 - Format check: `ruff format --check backend/src`
 - Type check: `mypy backend/src`
+- Lint Markdown: `bash run-markdown-lint.sh`
 
 ## Dependency updates
 
@@ -112,6 +125,7 @@ The repository uses a protected-`main` workflow with short-lived topic branches.
 The full policy lives in `docs/branch-naming-convention.md`, and `.github/workflows/branch-policy.yml` enforces branch names in GitHub Actions. For GitHub branch protection, require both `CI` and `Branch policy` on `main` and disallow direct pushes.
 
 (Optional) Pre-commit hooks:
+
 ```bash
 pip install pre-commit
 pre-commit install
